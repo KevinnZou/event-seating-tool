@@ -1,0 +1,3 @@
+import { useState } from 'react';
+import { EventForm } from './EventForm';
+export function Home(){const [create,setCreate]=useState(false);return <><div className="page-heading"><div><h1>本地活动</h1><p className="muted">无需登录 · 仅保存在本机 · 建议下载备份</p></div><button className="primary" onClick={()=>setCreate(true)}>新建活动</button></div><p className="notice">活动数据仅保存在当前浏览器。清理站点数据、换设备或使用无痕模式可能丢失数据。完整备份与恢复将在 M4 提供。</p><section className="empty"><h2>从一场活动开始</h2><p>创建活动，逐组核对人数，为每位宾客安排一张圆桌。</p><button onClick={()=>setCreate(true)}>创建第一个活动</button></section>{create&&<EventForm onClose={()=>setCreate(false)} onSave={async()=>{setCreate(false);}}/>}</>;}
