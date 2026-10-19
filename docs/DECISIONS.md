@@ -52,3 +52,4 @@
 - 复用现有视觉系统，新增工作台、筛选和批量工具条。无需依赖拖拽，手机保留每组桌位菜单。
 - 安装dnd-kit、pinyin-pro；为后续导入准备Papa Parse和按需加载ExcelJS。ExcelJS的uuid依赖只使用v4，经核查使用兼容CommonJS的uuid11覆盖修复中危依赖，npm audit为0；XLSX往返将在M3/M4测试。
 - M2检查：lint/typecheck/tests(36)/build通过；浏览器回归结果记入后续验收。
+- M2浏览器回归捕获了异步历史包装后select值被React还原的问题：现改为事件发生时同步读取目标桌，再进入异步事务；桌面/手机6项回归全部通过。

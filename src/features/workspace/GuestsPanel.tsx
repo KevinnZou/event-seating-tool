@@ -107,15 +107,16 @@ export function GuestsPanel({
                           (t) => t.id === g.tableId && t.locked,
                         )
                       }
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const target = e.target.value || null;
                         void run(() =>
                           seatingService.moveGuestGroup(
                             snapshot.event.id,
                             g.id,
-                            e.target.value || null,
+                            target,
                           ),
-                        )
-                      }
+                        );
+                      }}
                     >
                       <option value="">未安排</option>
                       {snapshot.tables.map((t) => (

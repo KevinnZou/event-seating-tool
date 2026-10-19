@@ -56,15 +56,12 @@ function Group({
         aria-label={`工作台安排 ${g.displayName}`}
         value={g.tableId ?? ""}
         disabled={busy || locked || g.attendance === "declined"}
-        onChange={(e) =>
+        onChange={(e) => {
+          const target = e.target.value || null;
           void run(() =>
-            workspaceService.move(
-              snapshot.event.id,
-              [g.id],
-              e.target.value || null,
-            ),
-          )
-        }
+            workspaceService.move(snapshot.event.id, [g.id], target),
+          );
+        }}
       >
         <option value="">未安排</option>
         {snapshot.tables.map((t) => (
