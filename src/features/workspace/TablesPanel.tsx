@@ -1,3 +1,4 @@
+import { workspaceService } from "../../domain/workspaceService";
 import { occupancy } from "../../domain/calculations";
 import { seatingService } from "../../domain/services";
 import type { Snapshot, TableEntity } from "../../domain/models";
@@ -34,7 +35,7 @@ export function TablesPanel({
             </thead>
             <tbody>
               {snapshot.tables.map((t) => (
-                <tr key={t.id}>
+                <tr key={t.id} id={`table-${t.id}`} tabIndex={-1}>
                   <td>
                     <span className="table-label">{t.label}</span>
                     {t.locked && <p className="muted">已锁定</p>}
@@ -45,6 +46,44 @@ export function TablesPanel({
                   </td>
                   <td>
                     <div className="actions">
+                      <button
+                        className="link-button"
+                        aria-label={`${t.label}桌上移`}
+                        disabled={
+                          busy || t.locked || snapshot.tables[0].id === t.id
+                        }
+                        onClick={() =>
+                          void run(() =>
+                            workspaceService.reorder(
+                              snapshot.event.id,
+                              t.id,
+                              -1,
+                            ),
+                          )
+                        }
+                      >
+                        上移
+                      </button>
+                      <button
+                        className="link-button"
+                        aria-label={`${t.label}桌下移`}
+                        disabled={
+                          busy ||
+                          t.locked ||
+                          snapshot.tables.at(-1)?.id === t.id
+                        }
+                        onClick={() =>
+                          void run(() =>
+                            workspaceService.reorder(
+                              snapshot.event.id,
+                              t.id,
+                              1,
+                            ),
+                          )
+                        }
+                      >
+                        下移
+                      </button>
                       <button
                         className="link-button"
                         disabled={t.locked || busy}

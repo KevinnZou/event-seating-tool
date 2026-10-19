@@ -7,11 +7,13 @@ export function TableForm({
   initial,
   capacity,
   onClose,
+  execute,
 }: {
   eventId: string;
   initial?: TableEntity;
   capacity: number;
   onClose: () => void;
+  execute: (a: () => Promise<unknown>) => Promise<void>;
 }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -20,15 +22,17 @@ export function TableForm({
     const f = new FormData(e.currentTarget);
     setBusy(true);
     try {
-      await seatingService.saveTable(
-        eventId,
-        {
-          label: String(f.get("label")),
-          capacity: Number(f.get("capacity")),
-          locked: initial?.locked ?? false,
-          note: String(f.get("note")),
-        },
-        initial?.id,
+      await execute(() =>
+        seatingService.saveTable(
+          eventId,
+          {
+            label: String(f.get("label")),
+            capacity: Number(f.get("capacity")),
+            locked: initial?.locked ?? false,
+            note: String(f.get("note")),
+          },
+          initial?.id,
+        ),
       );
       onClose();
     } catch (e) {

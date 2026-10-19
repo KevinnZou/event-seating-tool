@@ -1,3 +1,5 @@
+import type { Filters } from "../seating/selectors";
+import { filterGuests } from "../seating/selectors";
 import {
   attendanceLabels,
   type GuestGroupEntity,
@@ -10,12 +12,20 @@ export function GuestsPanel({
   onEdit,
   run,
   busy,
+  filters,
+  selected,
+  onSelect,
+  onSplit,
 }: {
   snapshot: Snapshot;
   onAdd: () => void;
   onEdit: (g: GuestGroupEntity) => void;
   run: (action: () => Promise<unknown>) => Promise<void>;
   busy: boolean;
+  filters: Filters;
+  selected: string[];
+  onSelect: (ids: string[]) => void;
+  onSplit: (g: GuestGroupEntity) => void;
 }) {
   return (
     <section className="panel">
@@ -34,17 +44,52 @@ export function GuestsPanel({
           <table className="guest-table">
             <thead>
               <tr>
-                <th>名称 / 分组</th>
+                <th>
+                  <label className="check">
+                    <input
+                      type="checkbox"
+                      aria-label="选择筛选结果"
+                      checked={
+                        filterGuests(snapshot, filters).length > 0 &&
+                        filterGuests(snapshot, filters).every((g) =>
+                          selected.includes(g.id),
+                        )
+                      }
+                      onChange={(e) =>
+                        onSelect(
+                          e.target.checked
+                            ? filterGuests(snapshot, filters).map((g) => g.id)
+                            : [],
+                        )
+                      }
+                    />
+                    名称 / 分组
+                  </label>
+                </th>
                 <th>人数</th>
                 <th>桌位安排</th>
                 <th>状态 / 操作</th>
               </tr>
             </thead>
             <tbody>
-              {snapshot.guests.map((g) => (
-                <tr key={g.id}>
+              {filterGuests(snapshot, filters).map((g) => (
+                <tr key={g.id} id={`guest-${g.id}`} tabIndex={-1}>
                   <td className="guest-name">
-                    <strong>{g.displayName}</strong>
+                    <label className="check">
+                      <input
+                        type="checkbox"
+                        aria-label={`选择 ${g.displayName}`}
+                        checked={selected.includes(g.id)}
+                        onChange={(e) =>
+                          onSelect(
+                            e.target.checked
+                              ? [...selected, g.id]
+                              : selected.filter((id) => id !== g.id),
+                          )
+                        }
+                      />
+                      <strong>{g.displayName}</strong>
+                    </label>
                     <p className="muted">{g.category || "未分组"}</p>
                     {g.note && <p className="muted note">{g.note}</p>}
                   </td>
@@ -83,6 +128,13 @@ export function GuestsPanel({
                   <td>
                     <p className="muted">{attendanceLabels[g.attendance]}</p>
                     <div className="actions">
+                      <button
+                        className="link-button"
+                        disabled={busy || g.size < 2}
+                        onClick={() => onSplit(g)}
+                      >
+                        拆分
+                      </button>
                       <button
                         className="link-button"
                         disabled={busy}

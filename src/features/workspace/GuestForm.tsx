@@ -10,10 +10,12 @@ export function GuestForm({
   eventId,
   initial,
   onClose,
+  execute,
 }: {
   eventId: string;
   initial?: GuestGroupEntity;
   onClose: () => void;
+  execute: (a: () => Promise<unknown>) => Promise<void>;
 }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -29,18 +31,20 @@ export function GuestForm({
       return;
     setBusy(true);
     try {
-      await seatingService.saveGuest(
-        eventId,
-        {
-          displayName: String(f.get("displayName")),
-          size: Number(f.get("size")),
-          kind: String(f.get("kind")) as GuestInput["kind"],
-          category: String(f.get("category")),
-          attendance,
-          note: String(f.get("note")),
-        },
-        initial?.id,
-        true,
+      await execute(() =>
+        seatingService.saveGuest(
+          eventId,
+          {
+            displayName: String(f.get("displayName")),
+            size: Number(f.get("size")),
+            kind: String(f.get("kind")) as GuestInput["kind"],
+            category: String(f.get("category")),
+            attendance,
+            note: String(f.get("note")),
+          },
+          initial?.id,
+          true,
+        ),
       );
       onClose();
     } catch (e) {

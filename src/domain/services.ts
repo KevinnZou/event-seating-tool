@@ -243,6 +243,8 @@ export class SeatingService {
       if (!g) throw new Error("宾客不存在");
       if (s.tables.some((t) => t.id === g.tableId && t.locked))
         throw new Error("请先解锁桌位");
+      if (s.guests.some((item) => item.originGroupId === guestId))
+        throw new Error("此组有拆分来源关联，请通过批量选择同时删除关联组");
       await this.repo.database.guests.delete(guestId);
       await this.touch(eventId);
     });

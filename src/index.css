@@ -512,3 +512,131 @@ dialog .section-heading {
     max-width: none;
   }
 }
+.filterbar {
+  display: grid;
+  grid-template-columns: 2fr repeat(4, 1fr);
+  gap: 12px;
+  margin: 18px 0;
+}
+.workspace-tools {
+  margin: 22px 0 12px;
+}
+.workspace-tools p {
+  margin-top: 6px;
+}
+button[aria-pressed="true"] {
+  background: #14665f;
+  color: white;
+}
+.batchbar,
+.swapbar,
+.board-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 18px 0;
+}
+.batchbar select {
+  width: auto;
+  max-width: 190px;
+}
+.batchbar span {
+  font-size: 13px;
+}
+.swapbar label {
+  min-width: 140px;
+}
+.swapbar {
+  align-items: end;
+  padding: 18px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.seating-board {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.table-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.board-zone {
+  min-height: 180px;
+  transition: background 0.15s;
+}
+.drop-over {
+  background: #d9efeb;
+  outline: 2px solid #14665f;
+}
+.board-group {
+  position: relative;
+  background: #f6f8f9;
+  border: 1px solid var(--border);
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 6px;
+}
+.drag-handle {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  white-space: normal;
+  text-align: left;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  touch-action: none;
+  cursor: grab;
+}
+.board-group select {
+  margin-top: 8px;
+}
+.check input {
+  flex-shrink: 0;
+}
+.board-toolbar {
+  justify-content: space-between;
+}
+.board-toolbar label {
+  max-width: 230px;
+}
+.guest-table tr:target,
+[id^="table-"]:target {
+  outline: 3px solid #74ada6;
+}
+@media (max-width: 1000px) {
+  .filterbar {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .seating-board {
+    grid-template-columns: 240px 1fr;
+  }
+  .table-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 650px) {
+  .filterbar {
+    grid-template-columns: 1fr 1fr;
+  }
+  .filterbar > label:first-child {
+    grid-column: 1/-1;
+  }
+  .seating-board {
+    grid-template-columns: 1fr;
+  }
+  .table-grid {
+    grid-template-columns: 1fr;
+  }
+  .batchbar select {
+    max-width: 100%;
+  }
+  .workspace-tools .actions {
+    gap: 6px;
+  }
+}
