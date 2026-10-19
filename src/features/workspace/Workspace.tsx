@@ -1,3 +1,5 @@
+import { ImportWizard } from "../import/ImportWizard";
+import { ValidationCenter } from "./ValidationCenter";
 import { historyService } from "../../domain/historyService";
 import { workspaceService } from "../../domain/workspaceService";
 import { GuestFilters } from "../seating/GuestFilters";
@@ -11,7 +13,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../../db/database";
 import { repository } from "../../db/repository";
 import { seatingService } from "../../domain/services";
-import { calculateEventStats, validateEvent } from "../../domain/calculations";
+import { calculateEventStats } from "../../domain/calculations";
 import {
   eventTypes,
   type GuestGroupEntity,
@@ -31,6 +33,7 @@ export function Workspace() {
   const [table, setTable] = useState<TableEntity | "new" | null>(null);
   const [guest, setGuest] = useState<GuestGroupEntity | "new" | null>(null);
   const [edit, setEdit] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -65,7 +68,7 @@ export function Workspace() {
       </>
     );
   const stats = calculateEventStats(result);
-  const issues = validateEvent(result);
+
   return (
     <>
       <Link className="crumb" to="/">
@@ -79,7 +82,10 @@ export function Workspace() {
             {result.event.date ?? "日期未设置"} · 按整组安排，超员默认阻止
           </p>
         </div>
-        <button onClick={() => setEdit(true)}>编辑活动</button>
+        <div className="actions">
+          <button onClick={() => setImporting(true)}>导入名单</button>
+          <button onClick={() => setEdit(true)}>编辑活动</button>
+        </div>
       </div>
       <div className="stats">
         {[
@@ -220,23 +226,25 @@ export function Workspace() {
           对调两桌宾客
         </button>
       </div>
-      <section className="panel issues">
-        <h2>基础数据检查</h2>
-        <p className="muted">
-          按人数统计；同名只提醒，绝不合并。完整校验中心将在 M3 提供。
-        </p>
-        {issues.length ? (
-          <ul>
-            {issues.map((issue, i) => (
-              <li key={`${issue.code}-${i}`}>
-                {issue.severity === "error" ? "错误" : "提醒"}：{issue.message}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>暂无数据问题</p>
-        )}
-      </section>
+      <ValidationCenter
+        snapshot={result}
+        onLocate={(id) => {
+          setView("list");
+          setFilters(initialFilters);
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => {
+              const element =
+                document.getElementById(`guest-${id}`) ??
+                document.getElementById(`table-${id}`);
+              element?.scrollIntoView({ behavior: "smooth", block: "center" });
+              element?.focus();
+            }),
+          );
+        }}
+      />
+      {importing && (
+        <ImportWizard snapshot={result} onClose={() => setImporting(false)} />
+      )}
       <p className="notice" style={{ marginTop: 20 }}>
         仅保存在当前浏览器。M1 暂无文件备份，请使用虚构数据试用。
       </p>

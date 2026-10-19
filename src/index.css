@@ -640,3 +640,39 @@ button[aria-pressed="true"] {
     gap: 6px;
   }
 }
+.import-wizard {
+  display: grid;
+  gap: 16px;
+}
+.import-text {
+  min-height: 190px;
+}
+.preview-table input {
+  min-width: 100px;
+}
+.preview-table td:first-child {
+  min-width: 130px;
+}
+.preview-table td:last-child {
+  min-width: 160px;
+}
+.preview-table details {
+  font-size: 12px;
+  max-width: 240px;
+  overflow-wrap: anywhere;
+}
+dialog:has(.import-wizard) {
+  width: min(1120px, calc(100% - 24px));
+}
+.import-wizard footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.filterbar {
+  position: relative;
+}
+tr:focus {
+  outline: 3px solid #74ada6;
+  outline-offset: -3px;
+}

@@ -118,18 +118,16 @@ export class WorkspaceService {
         size: segments[0].size,
         updatedAt: createdAt,
       };
-      const rest = segments
-        .slice(1)
-        .map((p, i) => ({
-          ...g,
-          id: crypto.randomUUID(),
-          displayName: p.name.trim(),
-          size: p.size,
-          originGroupId: g.id,
-          orderIndex: nextOrderIndex(s.guests) + i,
-          createdAt,
-          updatedAt: createdAt,
-        }));
+      const rest = segments.slice(1).map((p, i) => ({
+        ...g,
+        id: crypto.randomUUID(),
+        displayName: p.name.trim(),
+        size: p.size,
+        originGroupId: g.id,
+        orderIndex: nextOrderIndex(s.guests) + i,
+        createdAt,
+        updatedAt: createdAt,
+      }));
       await this.replace({
         ...s,
         guests: [
