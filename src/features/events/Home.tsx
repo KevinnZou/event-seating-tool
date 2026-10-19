@@ -1,3 +1,147 @@
-import { useState } from 'react';
-import { EventForm } from './EventForm';
-export function Home(){const [create,setCreate]=useState(false);return <><div className="page-heading"><div><h1>本地活动</h1><p className="muted">无需登录 · 仅保存在本机 · 建议下载备份</p></div><button className="primary" onClick={()=>setCreate(true)}>新建活动</button></div><p className="notice">活动数据仅保存在当前浏览器。清理站点数据、换设备或使用无痕模式可能丢失数据。完整备份与恢复将在 M4 提供。</p><section className="empty"><h2>从一场活动开始</h2><p>创建活动，逐组核对人数，为每位宾客安排一张圆桌。</p><button onClick={()=>setCreate(true)}>创建第一个活动</button></section>{create&&<EventForm onClose={()=>setCreate(false)} onSave={async()=>{setCreate(false);}}/>}</>;}
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../../db/database";
+import { seatingService } from "../../domain/services";
+import type { EventEntity } from "../../domain/models";
+import { EventForm } from "./EventForm";
+import { EventCard } from "./EventCard";
+import { createDemo } from "./demoService";
+import { Modal } from "../../components/ui/Modal";
+export function Home() {
+  const events = useLiveQuery(() =>
+    db.events.orderBy("updatedAt").reverse().toArray(),
+  );
+  const navigate = useNavigate();
+  const [edit, setEdit] = useState<EventEntity | "new" | null>(null);
+  const [deleting, setDeleting] = useState<EventEntity | null>(null);
+  const [confirmation, setConfirmation] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function run(action: () => Promise<unknown>) {
+    setBusy(true);
+    setError("");
+    try {
+      await action();
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "保存失败，请检查浏览器存储权限",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <>
+      <div className="page-heading">
+        <div>
+          <h1>本地活动</h1>
+          <p className="muted">无需登录 · 仅保存在本机 · 建议下载备份</p>
+        </div>
+        <button className="primary" onClick={() => setEdit("new")}>
+          新建活动
+        </button>
+      </div>
+      <p className="notice">
+        活动数据仅保存在当前浏览器。清理站点数据、换设备或使用无痕模式可能丢失数据。完整备份与恢复将在
+        M4 提供。
+      </p>
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+      {events === undefined ? (
+        <p role="status">正在读取本地活动…</p>
+      ) : events.length === 0 ? (
+        <section className="empty">
+          <h2>从一场活动开始</h2>
+          <p>创建活动，逐组核对人数，为每位宾客安排一张圆桌。</p>
+          <button onClick={() => setEdit("new")}>创建第一个活动</button>
+        </section>
+      ) : (
+        events.map((event) => (
+          <EventCard
+            key={event.id}
+            event={event}
+            onEdit={() => setEdit(event)}
+            onCopy={() =>
+              void run(async () => {
+                await seatingService.copyEvent(event.id);
+              })
+            }
+            onDelete={() => {
+              setConfirmation("");
+              setDeleting(event);
+            }}
+          />
+        ))
+      )}
+      <button
+        className="demo"
+        disabled={busy}
+        onClick={() =>
+          void run(async () => navigate(`/events/${await createDemo()}`))
+        }
+      >
+        {busy ? "正在处理…" : "试用虚构演示"}
+      </button>
+      {edit && (
+        <EventForm
+          initial={edit === "new" ? undefined : edit}
+          onClose={() => setEdit(null)}
+          onSave={async (input, count) => {
+            if (edit === "new")
+              navigate(
+                `/events/${await seatingService.createEvent(input, count)}`,
+              );
+            else await seatingService.updateEvent(edit.id, input);
+          }}
+        />
+      )}
+      {deleting && (
+        <Modal title="删除活动" onClose={() => setDeleting(null)}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void run(async () => {
+                await seatingService.deleteEvent(deleting.id, confirmation);
+                setDeleting(null);
+              });
+            }}
+          >
+            <p>
+              将永久删除“{deleting.name}
+              ”及全部桌位、宾客组。建议先保留名单副本；当前 M1
+              尚不提供文件备份。
+            </p>
+            <label>
+              输入完整活动名称确认
+              <input
+                autoFocus
+                value={confirmation}
+                onChange={(e) => setConfirmation(e.target.value)}
+              />
+            </label>
+            {error && (
+              <p role="alert" className="error">
+                {error}
+              </p>
+            )}
+            <footer>
+              <button type="button" onClick={() => setDeleting(null)}>
+                取消
+              </button>
+              <button
+                className="danger"
+                disabled={busy || confirmation !== deleting.name}
+              >
+                确认删除活动
+              </button>
+            </footer>
+          </form>
+        </Modal>
+      )}
+    </>
+  );
+}
