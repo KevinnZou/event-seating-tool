@@ -1,0 +1,335 @@
+import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useDraggable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import type {
+  GuestGroupEntity,
+  Snapshot,
+  TableEntity,
+} from "../../domain/models";
+import type { VenueArea } from "../../domain/venueModels";
+import { layoutOf, layoutWarnings } from "../../domain/geometry";
+import { venueService } from "../../domain/venueService";
+import { workspaceService } from "../../domain/workspaceService";
+import { searchText } from "../seating/selectors";
+import { PlanCanvas, type PlanSelection } from "./PlanCanvas";
+import { PlanInspector } from "./PlanInspector";
+import { AreaForm } from "./AreaForm";
+function PendingGroup({
+  guest,
+  disabled,
+}: {
+  guest: GuestGroupEntity;
+  disabled: boolean;
+}) {
+  const { setNodeRef, listeners, attributes, transform } = useDraggable({
+    id: guest.id,
+    disabled,
+  });
+  return (
+    <button
+      className="plan-pending-group"
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      disabled={disabled}
+      aria-label={`平面图拖动 ${guest.displayName}`}
+      style={
+        transform
+          ? {
+              transform: `translate(${transform.x}px, ${transform.y}px)`,
+              zIndex: 20,
+            }
+          : undefined
+      }
+    >
+      <strong>{guest.displayName}</strong>
+      <span>{guest.size} 人</span>
+    </button>
+  );
+}
+export function FloorPlan({
+  snapshot,
+  busy,
+  run,
+  execute,
+  onDetails,
+  onAddTable,
+  onAddGuest,
+}: {
+  snapshot: Snapshot;
+  busy: boolean;
+  run: (action: () => Promise<unknown>) => Promise<void>;
+  execute: (action: () => Promise<unknown>) => Promise<void>;
+  onDetails: (table: TableEntity) => void;
+  onAddTable: () => void;
+  onAddGuest: () => void;
+}) {
+  const [selection, setSelection] = useState<PlanSelection | null>(null),
+    [layoutMode, setLayoutMode] = useState(false),
+    [zoom, setZoom] = useState(1),
+    [query, setQuery] = useState("");
+  const [pendingOpen, setPendingOpen] = useState(
+    () => !window.matchMedia("(max-width: 650px)").matches,
+  );
+  const [activeGuest, setActiveGuest] = useState<GuestGroupEntity | null>(null);
+  const [area, setArea] = useState<VenueArea | "new" | null>(null);
+  const [width, setWidth] = useState(800);
+  const container = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) =>
+      setWidth(entries[0].contentRect.width),
+    );
+    if (container.current) observer.observe(container.current);
+    return () => observer.disconnect();
+  }, []);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
+  const { venue } = layoutOf(snapshot),
+    fit = Math.min(1, Math.max(0.1, (width - 16) / venue.width)),
+    baseScale = Math.max(0.45, fit),
+    scale = baseScale * zoom;
+  const pending = snapshot.guests.filter(
+    (g) => !g.tableId && g.attendance !== "declined",
+  );
+  const shown = pending.filter((g) =>
+    searchText(g.displayName + " " + (g.category ?? "")).includes(
+      query.trim().toLowerCase(),
+    ),
+  );
+  const warnings = layoutWarnings(snapshot);
+  return (
+    <section className="floorplan-feature" aria-label="场地平面图工作区">
+      <div className="plan-heading">
+        <div>
+          <span className="eyebrow">VENUE / 圆桌布局</span>
+          <h2>场地平面图</h2>
+          <p className="muted">
+            圆桌位置与宾客安排分别调整；一组宾客始终占用其完整人数。
+          </p>
+        </div>
+        <div className="actions">
+          <Link
+            className="button primary"
+            to={`/events/${snapshot.event.id}/plan-export`}
+          >
+            导出场地图
+          </Link>
+          <button onClick={onAddTable}>新增桌位</button>
+          <button onClick={onAddGuest}>新增宾客组</button>
+        </div>
+      </div>
+      <div className="plan-toolbar">
+        <div className="actions">
+          <button
+            aria-pressed={!layoutMode}
+            onClick={() => setLayoutMode(false)}
+          >
+            安排宾客
+          </button>
+          <button aria-pressed={layoutMode} onClick={() => setLayoutMode(true)}>
+            调整布局
+          </button>
+          <button onClick={() => setArea("new")} disabled={busy}>
+            添加舞台 / 入口
+          </button>
+        </div>
+        <div className="actions">
+          <button
+            aria-label="缩小场地图"
+            disabled={zoom <= 0.3}
+            onClick={() => setZoom(Math.max(0.3, zoom - 0.2))}
+          >
+            −
+          </button>
+          <span>{Math.round(scale * 100)}%</span>
+          <button
+            aria-label="放大场地图"
+            disabled={zoom >= 3}
+            onClick={() => setZoom(Math.min(3, zoom + 0.2))}
+          >
+            ＋
+          </button>
+          <button onClick={() => setZoom(fit / baseScale)}>适应画布</button>
+        </div>
+      </div>
+      <p className="plan-mode-hint">
+        {layoutMode
+          ? "拖动圆桌或区域调整位置。选中圆桌后可用方向键每次移动10，或在详情填写坐标；锁定桌不可移动。"
+          : "从未安排区拖入圆桌，或点击圆桌后用菜单安排。手机可横向滚动画布、放大查看，无需拖拽。"}
+      </p>
+      <DndContext
+        sensors={sensors}
+        onDragStart={({ active }) =>
+          setActiveGuest(
+            snapshot.guests.find((g) => g.id === active.id) ?? null,
+          )
+        }
+        onDragCancel={() => setActiveGuest(null)}
+        onDragEnd={({ active, over }) => {
+          setActiveGuest(null);
+          if (over && !layoutMode)
+            void run(() =>
+              workspaceService.move(
+                snapshot.event.id,
+                [String(active.id)],
+                String(over.id),
+              ),
+            );
+        }}
+      >
+        <div className="plan-layout">
+          <aside className="panel plan-pending">
+            <details
+              open={pendingOpen}
+              onToggle={(e) => setPendingOpen(e.currentTarget.open)}
+            >
+              <summary>
+                <h3>
+                  未安排{" "}
+                  <span>{pending.reduce((sum, g) => sum + g.size, 0)} 人</span>
+                </h3>
+              </summary>
+              <label>
+                查找未安排宾客
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="姓名、拼音或分组"
+                />
+              </label>
+              <p className="muted">
+                显示 {Math.min(50, shown.length)} / {shown.length} 组
+                {shown.length > 50 ? "，请搜索缩小范围" : ""}
+              </p>
+              <div className="plan-pending-list">
+                {shown.slice(0, 50).map((guest) => (
+                  <PendingGroup
+                    key={guest.id}
+                    guest={guest}
+                    disabled={busy || layoutMode}
+                  />
+                ))}
+                {!shown.length && (
+                  <p className="muted">暂无符合条件的未安排宾客。</p>
+                )}
+              </div>
+            </details>
+          </aside>
+          <div ref={container} className="plan-center">
+            <PlanCanvas
+              snapshot={snapshot}
+              selection={selection}
+              onSelect={setSelection}
+              layoutMode={layoutMode}
+              busy={busy}
+              scale={scale}
+              onPosition={(selected, point) =>
+                run(() =>
+                  venueService.position(
+                    snapshot.event.id,
+                    selected.kind,
+                    selected.id,
+                    point,
+                  ),
+                )
+              }
+            />
+          </div>
+          <PlanInspector
+            snapshot={snapshot}
+            selection={selection}
+            run={run}
+            busy={busy}
+            onDetails={onDetails}
+            onEditArea={setArea}
+          />
+        </div>
+        <DragOverlay dropAnimation={null}>
+          {activeGuest && (
+            <div className="plan-drag-ghost">
+              {activeGuest.displayName} · {activeGuest.size} 人
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
+      {warnings.length > 0 && (
+        <details className="notice">
+          <summary>布局提醒 {warnings.length} 项：有桌位或区域重叠</summary>
+          <ul>
+            {warnings.map((warning, i) => (
+              <li key={i}>{warning}</li>
+            ))}
+          </ul>
+        </details>
+      )}
+      <details className="panel plan-settings">
+        <summary>画布尺寸与自动整理</summary>
+        <form
+          key={`${venue.width}:${venue.height}`}
+          onSubmit={(e) => {
+            e.preventDefault();
+            const form = new FormData(e.currentTarget),
+              w = Number(form.get("width")),
+              h = Number(form.get("height"));
+            void run(() => venueService.resize(snapshot.event.id, w, h));
+          }}
+        >
+          <div className="form-grid">
+            <label>
+              画布宽度
+              <input
+                name="width"
+                type="number"
+                min={400}
+                max={12000}
+                required
+                defaultValue={venue.width}
+              />
+            </label>
+            <label>
+              画布高度
+              <input
+                name="height"
+                type="number"
+                min={400}
+                max={12000}
+                required
+                defaultValue={venue.height}
+              />
+            </label>
+          </div>
+          <button disabled={busy}>保存画布尺寸</button>
+        </form>
+        <button
+          disabled={busy || !snapshot.tables.length}
+          onClick={() => {
+            if (
+              window.confirm(
+                "按网格重新整理未锁定桌的位置？已有宾客安排、锁定桌和区域保持，可撤销。",
+              )
+            )
+              void run(() => venueService.arrange(snapshot.event.id));
+          }}
+        >
+          自动整理未锁定桌
+        </button>
+      </details>
+      {area && (
+        <AreaForm
+          eventId={snapshot.event.id}
+          initial={area === "new" ? undefined : area}
+          execute={execute}
+          onClose={() => setArea(null)}
+        />
+      )}
+    </section>
+  );
+}

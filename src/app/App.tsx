@@ -2,6 +2,11 @@ import { OfflineStatus } from "../offline/OfflineStatus";
 import { Suspense, lazy } from "react";
 import { HashRouter, Link, Route, Routes, useParams } from "react-router-dom";
 import { StorageGate } from "./StorageGate";
+const PlanDelivery = lazy(() =>
+  import("../features/floorplan/PlanDelivery").then((m) => ({
+    default: m.PlanDelivery,
+  })),
+);
 const HelpPage = lazy(() =>
   import("../features/help/HelpPage").then((m) => ({ default: m.HelpPage })),
 );
@@ -49,6 +54,10 @@ export default function App() {
           <OfflineStatus />
           <Suspense fallback={<p role="status">正在加载页面…</p>}>
             <Routes>
+              <Route
+                path="/events/:eventId/plan-export"
+                element={<PlanDelivery />}
+              />
               <Route path="/help" element={<HelpPage />} />
               <Route path="/events/:eventId" element={<WorkspaceRoute />} />
               <Route path="/events/:eventId/export" element={<ExportPage />} />
@@ -57,7 +66,7 @@ export default function App() {
           </Suspense>
         </main>
         <footer className="site-footer">
-          智能排桌助手 V0.1 · 圆桌活动 · 数据仅保存在当前浏览器
+          智能排桌助手 V0.2 · 圆桌活动 · 数据仅保存在当前浏览器
         </footer>
       </HashRouter>
     </StorageGate>

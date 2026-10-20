@@ -44,9 +44,14 @@ export function EventCard({
           </span>
         </div>
       </div>
-      <Link className="button primary" to={`/events/${event.id}`}>
-        进入活动
-      </Link>
+      <div className="actions">
+        <Link className="button" to={`/events/${event.id}?view=floor`}>
+          场地平面图
+        </Link>
+        <Link className="button primary" to={`/events/${event.id}`}>
+          进入活动
+        </Link>
+      </div>
     </article>
   );
 }

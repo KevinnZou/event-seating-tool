@@ -10,7 +10,7 @@ export const feedbackSchema = z.object({
 export function feedbackText(input: unknown) {
   const value = feedbackSchema.parse(input);
   return [
-    "智能排桌助手 V0.1 · 匿名反馈草稿",
+    "智能排桌助手 V0.2 · 匿名反馈草稿",
     `类型：${value.category}`,
     "",
     "问题或建议：",

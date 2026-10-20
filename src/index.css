@@ -1045,3 +1045,357 @@ h3 {
     font-size: 12px;
   }
 }
+
+.floorplan-feature {
+  margin: 20px 0;
+}
+.plan-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.eyebrow {
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+}
+.plan-heading h2 {
+  margin: 6px 0;
+}
+.plan-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px 10px 0 0;
+}
+.plan-mode-hint {
+  font-size: 12px;
+  background: #eaf3f2;
+  color: #43635e;
+  padding: 10px 14px;
+}
+.plan-layout {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr) 230px;
+  gap: 12px;
+  align-items: start;
+  margin: 12px 0;
+}
+.plan-layout .panel {
+  padding: 16px;
+  margin: 0;
+}
+.plan-pending h3 {
+  display: flex;
+  justify-content: space-between;
+}
+.plan-pending h3 span {
+  color: var(--accent);
+}
+.plan-pending label {
+  margin-top: 14px;
+}
+.plan-pending-list {
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: visible;
+  padding: 5px;
+  margin: 0 -5px;
+}
+.plan-pending-group {
+  display: flex;
+  text-align: left;
+  white-space: normal;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px;
+  position: relative;
+  touch-action: none;
+}
+.plan-pending-group strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.plan-pending-group span {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.plan-center {
+  min-width: 0;
+}
+.plan-scroll {
+  max-height: 650px;
+  min-height: 360px;
+  overflow: auto;
+  border: 1px solid #cbd9d7;
+  border-radius: 8px;
+  background: #e8eeee;
+  padding: 8px;
+  overscroll-behavior: contain;
+}
+.plan-world {
+  position: relative;
+  transform-origin: 0 0;
+  background-color: #fbfcfa;
+  background-image:
+    linear-gradient(#dfe8e366 1px, transparent 1px),
+    linear-gradient(90deg, #dfe8e366 1px, transparent 1px);
+  background-size: 30px 30px;
+  box-shadow: inset 0 0 0 2px #b7c8c3;
+}
+.plan-room-label {
+  position: absolute;
+  left: 30px;
+  top: 20px;
+  color: #526b63;
+  font-weight: 650;
+  font-size: 18px;
+  pointer-events: none;
+}
+.plan-room-label span {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: #71867e;
+}
+.plan-table {
+  position: absolute;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  z-index: 2;
+  padding: 5px;
+  border: 1px solid #b5d2c7;
+  background: #e6f0e7;
+}
+.plan-table > button {
+  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: #fff;
+  border: 2px solid #5f9180;
+  color: #164d3c;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-shadow: 0 3px 8px #365a4214;
+}
+.plan-table strong {
+  font-size: 20px;
+  line-height: 1.1;
+  max-width: 76px;
+  overflow: hidden;
+  max-height: 42px;
+}
+.plan-table span {
+  font-size: 12px;
+}
+.plan-table small {
+  font-size: 9px;
+  color: #60766a;
+}
+.plan-selected {
+  box-shadow: 0 0 0 4px #20786544;
+}
+.plan-drop {
+  background: #79bfa4;
+  box-shadow: 0 0 0 7px #20806155;
+}
+.plan-locked {
+  background: #eee9df;
+  border-color: #c4bda9;
+}
+.plan-locked > button {
+  border-color: #9a8d72;
+}
+.plan-area {
+  position: absolute;
+  border: 1px solid #82988e;
+  border-radius: 5px;
+  color: #304e42;
+  background: #d6e3da;
+  font-size: 22px;
+  z-index: 1;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.plan-area-entrance {
+  background: #efe8d8;
+  border-style: dashed;
+}
+.plan-area-zone {
+  background: #e3e8ec;
+}
+.plan-area-selected {
+  outline: 4px solid #14665f;
+  outline-offset: 3px;
+}
+.plan-inspector form,
+.plan-inspector > label {
+  margin-top: 15px;
+}
+.plan-inspector > button {
+  margin-top: 14px;
+}
+.plan-inspector .form-grid {
+  gap: 10px;
+}
+.plan-inspector form button {
+  width: 100%;
+}
+.plan-roster {
+  padding: 0;
+  list-style: none;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.plan-roster li {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.plan-roster small {
+  display: block;
+  color: #65777d;
+}
+.plan-roster select {
+  margin-top: 5px;
+}
+.plan-empty {
+  position: absolute;
+  top: 200px;
+  left: 80px;
+  font-size: 20px;
+  color: #71867e;
+}
+.plan-settings form {
+  max-width: 480px;
+  padding-top: 16px;
+}
+.plan-settings > button {
+  margin-top: 16px;
+}
+@media (max-width: 1100px) {
+  .plan-layout {
+    grid-template-columns: 160px minmax(0, 1fr);
+  }
+  .plan-inspector {
+    grid-column: 1 / -1;
+  }
+  .plan-roster {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+}
+@media (max-width: 650px) {
+  .plan-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .plan-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .plan-pending-list {
+    display: flex;
+    gap: 8px;
+    max-height: 180px;
+    flex-wrap: wrap;
+  }
+  .plan-pending-group {
+    width: auto;
+    max-width: 100%;
+    margin: 3px 0;
+  }
+  .plan-scroll {
+    min-height: 300px;
+    max-height: 480px;
+  }
+  .plan-pending label {
+    margin-top: 8px;
+  }
+}
+@media print {
+  .floorplan-feature {
+    display: none !important;
+  }
+}
+.plan-drag-ghost {
+  background: #14665f;
+  color: white;
+  border-radius: 8px;
+  padding: 12px 18px;
+  box-shadow: 0 6px 25px #173a3c44;
+  font-size: 14px;
+}
+.plan-delivery-image {
+  display: block;
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+  background: white;
+  border: 1px solid var(--border);
+  margin-top: 24px;
+}
+.plan-delivery-controls .muted {
+  margin-top: 12px;
+}
+@media print {
+  body:has(.plan-delivery) {
+    background: white;
+  }
+  body:has(.plan-delivery) .plan-delivery-controls,
+  body:has(.plan-delivery) .topbar,
+  body:has(.plan-delivery) .site-footer {
+    display: none !important;
+  }
+  body:has(.plan-delivery) main {
+    padding: 0;
+    margin: 0;
+    max-width: none;
+  }
+  .plan-delivery-image {
+    border: none;
+    margin: 0;
+    width: 100%;
+    max-height: 185mm;
+    object-fit: contain;
+  }
+}
+.plan-pending summary {
+  cursor: pointer;
+}
+.plan-pending summary h3 {
+  display: inline-flex;
+  justify-content: space-between;
+  width: calc(100% - 18px);
+  gap: 10px;
+}
+@media (max-width: 650px) {
+  .workspace-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .workspace-heading > .actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .workspace-heading > .actions button,
+  .workspace-heading > .actions .button {
+    width: 100%;
+  }
+}

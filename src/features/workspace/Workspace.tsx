@@ -1,3 +1,4 @@
+import { FloorPlan } from "../floorplan/FloorPlan";
 import { TableDetails } from "./TableDetails";
 import { errorMessage } from "../../lib/errors";
 import { BackupManager } from "../export/BackupManager";
@@ -48,7 +49,11 @@ export function Workspace() {
   const [message, setMessage] = useState("");
   const [filters, setFilters] = useState(initialFilters),
     [selected, setSelected] = useState<string[]>([]),
-    [view, setView] = useState("list"),
+    [view, setView] = useState(
+      new URLSearchParams(location.search).get("view") === "floor"
+        ? "floor"
+        : "list",
+    ),
     [split, setSplit] = useState<GuestGroupEntity | null>(null);
   useSyncExternalStore(historyService.subscribe, historyService.getRevision);
   const execute = (action: () => Promise<unknown>) =>
@@ -83,7 +88,7 @@ export function Workspace() {
       <Link className="crumb" to="/">
         ← 返回本地活动
       </Link>
-      <div className="page-heading">
+      <div className="page-heading workspace-heading">
         <div>
           <h1>{result.event.name}</h1>
           <p className="muted">
@@ -151,6 +156,13 @@ export function Workspace() {
             名单与桌位
           </button>
           <button
+            className="primary"
+            aria-pressed={view === "floor"}
+            onClick={() => setView("floor")}
+          >
+            场地平面图
+          </button>
+          <button
             aria-pressed={view === "board"}
             onClick={() => setView("board")}
           >
@@ -171,17 +183,35 @@ export function Workspace() {
         </div>
         <p className="muted">撤销记录最多30步，仅本次页面会话有效。</p>
       </div>
-      <GuestFilters snapshot={result} value={filters} onChange={setFilters} />
-      <BatchActions
-        snapshot={result}
-        selected={selected.filter((id) =>
-          result.guests.some((g) => g.id === id),
-        )}
-        clear={() => setSelected([])}
-        run={run}
-        busy={busy}
-      />
-      {view === "board" ? (
+      {view !== "floor" && (
+        <>
+          <GuestFilters
+            snapshot={result}
+            value={filters}
+            onChange={setFilters}
+          />
+          <BatchActions
+            snapshot={result}
+            selected={selected.filter((id) =>
+              result.guests.some((g) => g.id === id),
+            )}
+            clear={() => setSelected([])}
+            run={run}
+            busy={busy}
+          />
+        </>
+      )}
+      {view === "floor" ? (
+        <FloorPlan
+          snapshot={result}
+          busy={busy}
+          run={run}
+          execute={execute}
+          onDetails={(t) => setDetailId(t.id)}
+          onAddTable={() => setTable("new")}
+          onAddGuest={() => setGuest("new")}
+        />
+      ) : view === "board" ? (
         <Board
           snapshot={result}
           filters={filters}
@@ -214,43 +244,49 @@ export function Workspace() {
           />
         </div>
       )}
-      <div className="swapbar">
-        <label>
-          对调桌位
-          <select id="swap-a">
-            <option value="">选择第一桌</option>
-            {result.tables.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label} 桌
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          目标桌位
-          <select id="swap-b">
-            <option value="">选择第二桌</option>
-            {result.tables.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label} 桌
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          disabled={busy}
-          onClick={() => {
-            const a = (document.getElementById("swap-a") as HTMLSelectElement)
-                .value,
-              b = (document.getElementById("swap-b") as HTMLSelectElement)
-                .value;
-            if (a && b && window.confirm("对调两桌全部宾客？桌号与容量不变。"))
-              void run(() => workspaceService.swap(eventId, a, b));
-          }}
-        >
-          对调两桌宾客
-        </button>
-      </div>
+      {view !== "floor" && (
+        <div className="swapbar">
+          <label>
+            对调桌位
+            <select id="swap-a">
+              <option value="">选择第一桌</option>
+              {result.tables.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label} 桌
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            目标桌位
+            <select id="swap-b">
+              <option value="">选择第二桌</option>
+              {result.tables.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label} 桌
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            disabled={busy}
+            onClick={() => {
+              const a = (document.getElementById("swap-a") as HTMLSelectElement)
+                  .value,
+                b = (document.getElementById("swap-b") as HTMLSelectElement)
+                  .value;
+              if (
+                a &&
+                b &&
+                window.confirm("对调两桌全部宾客？桌号与容量不变。")
+              )
+                void run(() => workspaceService.swap(eventId, a, b));
+            }}
+          >
+            对调两桌宾客
+          </button>
+        </div>
+      )}
       <ValidationCenter
         snapshot={result}
         onLocate={(id) => {

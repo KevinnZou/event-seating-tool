@@ -82,6 +82,11 @@ export function ExportPage() {
               : "未安排者和不参加者均会单独列出，不会被省略。"}
           </p>
         )}
+        <p>
+          <Link className="button" to={`/events/${eventId}/plan-export`}>
+            场地图 SVG / PNG / 打印
+          </Link>
+        </p>
         <div className="export-buttons">
           <button
             disabled={busy || blocked}

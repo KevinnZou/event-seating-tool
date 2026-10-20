@@ -202,15 +202,13 @@ it("V2备份含布局与命名方案，新活动恢复保引用；V1继续可读
 it("Dexie2升级3不丢旧活动、组和坐标，旧快照仍可读取", async () => {
   const name = crypto.randomUUID();
   const old = new Dexie(name);
-  old
-    .version(2)
-    .stores({
-      events: "id, updatedAt",
-      guests: "id, eventId, tableId, [eventId+tableId]",
-      seatingTables: "id, eventId, [eventId+orderIndex]",
-      checkpoints: "id, eventId, createdAt",
-      localMeta: "key",
-    });
+  old.version(2).stores({
+    events: "id, updatedAt",
+    guests: "id, eventId, tableId, [eventId+tableId]",
+    seatingTables: "id, eventId, [eventId+orderIndex]",
+    checkpoints: "id, eventId, createdAt",
+    localMeta: "key",
+  });
   const s = fixture();
   await old.open();
   await old.table("events").add(s.event);
@@ -225,4 +223,25 @@ it("Dexie2升级3不丢旧活动、组和坐标，旧快照仍可读取", async 
   } finally {
     await upgraded.delete();
   }
+});
+
+it("SVG文本转义、不包含名单，PNG输出有严格像素预算", async () => {
+  const { planSvg, pngDimensions } =
+    await import("../features/floorplan/planExport");
+  const s = fixture();
+  s.event.name = '<script>alert("fictional")</script>';
+  const result = planSvg(s);
+  expect(result.svg).toContain("&lt;script&gt;");
+  expect(result.svg).not.toContain("<script>");
+  expect(result.svg).not.toContain(s.guests[0].displayName);
+  for (const [w, h] of [
+    [1200, 950],
+    [12000, 12000],
+    [400, 12000],
+  ]) {
+    const p = pngDimensions(w, h);
+    expect(Math.max(p.width, p.height)).toBeLessThanOrEqual(4096);
+    expect(p.width * p.height).toBeLessThanOrEqual(16_000_000);
+  }
+  expect(() => pngDimensions(NaN, 20)).toThrow();
 });
