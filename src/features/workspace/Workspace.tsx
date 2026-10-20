@@ -1,3 +1,4 @@
+import { TableDetails } from "./TableDetails";
 import { errorMessage } from "../../lib/errors";
 import { BackupManager } from "../export/BackupManager";
 import { DataSafetyPanel } from "../export/DataSafetyPanel";
@@ -32,6 +33,7 @@ export function Workspace() {
   const { eventId = "" } = useParams();
   const location = useLocation();
   const peerWarning = usePeerWarning(eventId);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [backingUp, setBackingUp] = useState(false);
   const result = useLiveQuery(async () => {
     const event = await db.events.get(eventId);
@@ -185,7 +187,7 @@ export function Workspace() {
           filters={filters}
           run={run}
           busy={busy}
-          onEdit={setTable}
+          onEdit={(t) => setDetailId(t.id)}
           onAddTable={() => setTable("new")}
           onAddGuest={() => setGuest("new")}
         />
@@ -195,6 +197,7 @@ export function Workspace() {
             snapshot={result}
             onAdd={() => setTable("new")}
             onEdit={setTable}
+            onDetails={(t) => setDetailId(t.id)}
             run={run}
             busy={busy}
           />
@@ -286,6 +289,18 @@ export function Workspace() {
           guest={split}
           execute={execute}
           onClose={() => setSplit(null)}
+        />
+      )}
+      {detailId && (
+        <TableDetails
+          snapshot={result}
+          tableId={detailId}
+          execute={execute}
+          onClose={() => setDetailId(null)}
+          onEdit={(t) => {
+            setDetailId(null);
+            setTable(t);
+          }}
         />
       )}
       {table && (

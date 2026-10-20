@@ -107,8 +107,8 @@ function Zone({
           </p>
         </div>
         {table && (
-          <button disabled={table.locked || busy} onClick={() => onEdit(table)}>
-            详情 / 编辑
+          <button disabled={busy} onClick={() => onEdit(table)}>
+            查看详情
           </button>
         )}
       </div>

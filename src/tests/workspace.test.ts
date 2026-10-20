@@ -125,3 +125,31 @@ it("连续多步撤销和重做不会被更新时间误判为外部修改", asyn
   await history.redo(id);
   expect(calculateEventStats(await repo.snapshot(id)).assignedCount).toBe(11);
 });
+
+it("整桌迁回未安排保留人数、其他桌和活动，且整步可撤销", async () => {
+  const s = await repo.snapshot(id);
+  await svc.move(id, [s.guests[0].id], s.tables[0].id);
+  await svc.move(id, [s.guests[1].id], s.tables[1].id);
+  const other = await crud.copyEvent(id);
+  const otherBefore = await repo.snapshot(other);
+  await history.execute(id, () => svc.releaseTable(id, s.tables[0].id));
+  const after = await repo.snapshot(id);
+  expect(after.guests[0].tableId).toBeNull();
+  expect(after.guests[1].tableId).toBe(s.tables[1].id);
+  expect(calculateEventStats(after).totalRecordedCount).toBe(11);
+  expect(await repo.snapshot(other)).toEqual(otherBefore);
+  await history.undo(id);
+  expect((await repo.snapshot(id)).guests[0].tableId).toBe(s.tables[0].id);
+  await history.redo(id);
+  expect((await repo.snapshot(id)).guests[0].tableId).toBeNull();
+});
+it("整桌迁出拒绝锁定、跨活动桌，空桌不产生额外变更", async () => {
+  const s = await repo.snapshot(id);
+  await svc.releaseTable(id, s.tables[0].id);
+  expect(await repo.snapshot(id)).toEqual(s);
+  await crud.saveTable(id, { ...s.tables[0], locked: true }, s.tables[0].id);
+  await expect(svc.releaseTable(id, s.tables[0].id)).rejects.toThrow("解锁");
+  await expect(svc.releaseTable(id, crypto.randomUUID())).rejects.toThrow(
+    "当前活动",
+  );
+});

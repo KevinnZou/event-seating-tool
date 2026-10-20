@@ -276,3 +276,54 @@ test("导入只能显式指定更新，保留ID且人数变更可见", async ({ 
     page.getByRole("heading", { name: "宾客组（6）" }),
   ).toBeVisible();
 });
+
+test("桌位详情完整展示、移动、容量阻止、整桌迁出与撤销", async ({ page }) => {
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.goto("/");
+  await page.getByRole("button", { name: "试用虚构演示" }).click();
+  await page.getByRole("button", { name: "新增宾客组" }).click();
+  await page.getByLabel("名称 / 家庭或团队").fill("虚构七人测试组");
+  await page.getByLabel("人数", { exact: true }).fill("7");
+  await page.getByRole("button", { name: "保存宾客组" }).click();
+  await page.getByRole("button", { name: "查看 03 桌详情" }).click();
+  const detail = page.getByRole("dialog");
+  await expect(
+    detail.getByRole("heading", { name: "03 桌详情" }),
+  ).toBeVisible();
+  await detail
+    .getByLabel("选择未安排宾客入桌")
+    .selectOption({ label: "示例小禾一家 · 4 人 · 确认" });
+  await expect(detail.getByText("4 / 10 席", { exact: true })).toBeVisible();
+  await expect(detail.getByLabel("详情安排 示例小禾一家")).toBeVisible();
+  await detail
+    .getByLabel("选择未安排宾客入桌")
+    .selectOption({ label: "虚构七人测试组 · 7 人 · 确认" });
+  await expect(detail.getByRole("alert")).toContainText("超出 1 席");
+  await expect(detail.getByText("4 / 10 席", { exact: true })).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  if (process.env.CAPTURE_QA)
+    await page.screenshot({
+      path: `docs/design/v01/table-details-${test.info().project.name}.png`,
+    });
+  await detail.getByRole("button", { name: "全部迁回未安排" }).click();
+  await expect(detail.getByText("0 / 10 席", { exact: true })).toBeVisible();
+  await detail.getByRole("button", { name: "完成", exact: true }).click();
+  await page.getByRole("button", { name: "撤销", exact: true }).click();
+  await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+  await page.getByRole("button", { name: "排桌工作台", exact: true }).click();
+  const zone = page
+    .locator(".board-zone")
+    .filter({ has: page.getByRole("heading", { name: "03 桌", exact: true }) });
+  await zone.getByRole("button", { name: "查看详情" }).click();
+  await detail
+    .getByLabel("详情安排 示例小禾一家")
+    .selectOption({ label: "66 桌" });
+  await expect(detail.getByText("0 / 10 席", { exact: true })).toBeVisible();
+  await detail.getByRole("button", { name: "完成", exact: true }).click();
+  await page.reload();
+  await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+});

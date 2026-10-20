@@ -23,6 +23,18 @@ export class WorkspaceService {
       await this.replace(planMove(s, ids, target));
     });
   }
+  releaseTable(eventId: string, tableId: string) {
+    return this.repo.transaction(async () => {
+      const s = await this.repo.snapshot(eventId);
+      const table = s.tables.find((t) => t.id === tableId);
+      if (!table) throw new Error("桌位不属于当前活动");
+      if (table.locked) throw new Error("请先解锁桌位");
+      const ids = s.guests
+        .filter((g) => g.tableId === tableId)
+        .map((g) => g.id);
+      if (ids.length) await this.replace(planMove(s, ids, null));
+    });
+  }
   swap(eventId: string, a: string, b: string) {
     return this.repo.transaction(async () => {
       const s = await this.repo.snapshot(eventId);

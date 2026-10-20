@@ -6,12 +6,14 @@ export function TablesPanel({
   snapshot,
   onEdit,
   onAdd,
+  onDetails,
   run,
   busy,
 }: {
   snapshot: Snapshot;
   onEdit: (table: TableEntity) => void;
   onAdd: () => void;
+  onDetails: (table: TableEntity) => void;
   run: (action: () => Promise<unknown>) => Promise<void>;
   busy: boolean;
 }) {
@@ -37,7 +39,13 @@ export function TablesPanel({
               {snapshot.tables.map((t) => (
                 <tr key={t.id} id={`table-${t.id}`} tabIndex={-1}>
                   <td>
-                    <span className="table-label">{t.label}</span>
+                    <button
+                      className="link-button table-label"
+                      aria-label={`查看 ${t.label} 桌详情`}
+                      onClick={() => onDetails(t)}
+                    >
+                      {t.label}
+                    </button>
                     {t.locked && <p className="muted">已锁定</p>}
                   </td>
                   <td>
