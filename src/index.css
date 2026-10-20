@@ -647,7 +647,7 @@ button[aria-pressed="true"] {
 .import-text {
   min-height: 190px;
 }
-.preview-table input {
+.preview-table input:not([type="checkbox"]) {
   min-width: 100px;
 }
 .preview-table td:first-child {
@@ -884,4 +884,26 @@ h3 {
 }
 .batchbar > input {
   max-width: 180px;
+}
+
+.preview-table .check {
+  white-space: nowrap;
+  min-width: 78px;
+}
+.import-wizard > footer {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 12px;
+  color: #65777d;
 }

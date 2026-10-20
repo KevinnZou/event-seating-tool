@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import type { Filters } from "../seating/selectors";
 import { filterGuests } from "../seating/selectors";
 import {
@@ -27,6 +28,15 @@ export function GuestsPanel({
   onSelect: (ids: string[]) => void;
   onSplit: (g: GuestGroupEntity) => void;
 }) {
+  const guests = useMemo(
+    () => filterGuests(snapshot, filters),
+    [snapshot, filters],
+  );
+  const key = JSON.stringify(filters);
+  const [pagination, setPagination] = useState({ key: "", page: 0 });
+  const totalPages = Math.max(1, Math.ceil(guests.length / 50));
+  const page =
+    pagination.key === key ? Math.min(pagination.page, totalPages - 1) : 0;
   return (
     <section className="panel">
       <div className="section-heading">
@@ -35,10 +45,14 @@ export function GuestsPanel({
           新增宾客组
         </button>
       </div>
-      {snapshot.guests.length > 0 &&
-        filterGuests(snapshot, filters).length === 0 && (
-          <p className="notice">没有符合筛选的宾客，请调整或清除筛选。</p>
-        )}
+      {filters.guestId && (
+        <p className="notice">
+          已精确定位一组宾客，使用“清除筛选”返回全部名单。
+        </p>
+      )}
+      {snapshot.guests.length > 0 && guests.length === 0 && (
+        <p className="notice">没有符合筛选的宾客，请调整或清除筛选。</p>
+      )}
       {snapshot.guests.length === 0 ? (
         <p className="muted">
           暂无宾客。添加一人、家庭或团队，按整组安排桌位。
@@ -54,16 +68,12 @@ export function GuestsPanel({
                       type="checkbox"
                       aria-label="选择筛选结果"
                       checked={
-                        filterGuests(snapshot, filters).length > 0 &&
-                        filterGuests(snapshot, filters).every((g) =>
-                          selected.includes(g.id),
-                        )
+                        guests.length > 0 &&
+                        guests.every((g) => selected.includes(g.id))
                       }
                       onChange={(e) =>
                         onSelect(
-                          e.target.checked
-                            ? filterGuests(snapshot, filters).map((g) => g.id)
-                            : [],
+                          e.target.checked ? guests.map((g) => g.id) : [],
                         )
                       }
                     />
@@ -76,7 +86,7 @@ export function GuestsPanel({
               </tr>
             </thead>
             <tbody>
-              {filterGuests(snapshot, filters).map((g) => (
+              {guests.slice(page * 50, (page + 1) * 50).map((g) => (
                 <tr key={g.id} id={`guest-${g.id}`} tabIndex={-1}>
                   <td className="guest-name">
                     <label className="check">
@@ -172,6 +182,26 @@ export function GuestsPanel({
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {guests.length > 50 && (
+        <div className="pagination">
+          <button
+            disabled={page === 0}
+            onClick={() => setPagination({ key, page: page - 1 })}
+          >
+            上一页
+          </button>
+          <span>
+            筛选结果 {guests.length} 组 · 第 {page + 1} / {totalPages}{" "}
+            页（每页50组）
+          </span>
+          <button
+            disabled={page + 1 >= totalPages}
+            onClick={() => setPagination({ key, page: page + 1 })}
+          >
+            下一页
+          </button>
         </div>
       )}
     </section>

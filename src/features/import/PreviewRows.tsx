@@ -19,6 +19,9 @@ export function PreviewRows({
   const [choosing, setChoosing] = useState<string | null>(null);
   return (
     <>
+      <p className="muted">
+        预览表格可左右滚动。请核对全部字段；取消勾选的行会计入排除数量。
+      </p>
       <div className="scroll preview-table">
         <table>
           <thead>

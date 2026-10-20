@@ -5,7 +5,11 @@ import { SeatingService } from "../domain/services";
 import { WorkspaceService } from "../domain/workspaceService";
 import { HistoryService } from "../domain/historyService";
 import { calculateEventStats } from "../domain/calculations";
-import { filterGuests, initialFilters } from "../features/seating/selectors";
+import {
+  filterGuests,
+  initialFilters,
+  searchText,
+} from "../features/seating/selectors";
 let db: SeatingDB;
 let repo: Repository;
 let crud: SeatingService;
@@ -94,6 +98,10 @@ it("桌位对调按目标容量校验并保留标签，排序显式保存", asyn
 });
 it("拼音、原文、分类、未安排筛选和自然桌号排序", async () => {
   const s = await repo.snapshot(id);
+  expect(searchText("虚构中文")).toContain("xgzw");
+  expect(
+    filterGuests(s, { ...initialFilters, guestId: s.guests[0].id }),
+  ).toHaveLength(1);
   expect(filterGuests(s, { ...initialFilters, query: "xiaohe" })).toHaveLength(
     1,
   );

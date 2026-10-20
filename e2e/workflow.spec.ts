@@ -165,8 +165,13 @@ for (const people of [300, 500])
     await expect(page.getByTestId("stat-桌位数量")).toHaveText(
       String(people / 10),
     );
-    const importedMs = Date.now() - started,
-      startSearch = Date.now();
+    const importedMs = Date.now() - started;
+    await page.getByRole("button", { name: "下一页", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "上一页", exact: true }),
+    ).toBeEnabled();
+    await page.getByRole("button", { name: "上一页", exact: true }).click();
+    const startSearch = Date.now();
     await page.getByLabel("搜索宾客").fill("yijia");
     const menu = page.getByLabel("安排 虚构性能1桌1组一家 的桌位");
     await expect(menu).toBeVisible();

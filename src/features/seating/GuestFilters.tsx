@@ -12,7 +12,7 @@ export function GuestFilters({
   onChange: (f: Filters) => void;
 }) {
   const set = (key: keyof Filters, v: string) =>
-    onChange({ ...value, [key]: v });
+    onChange({ ...value, [key]: v, guestId: undefined });
   return (
     <div className="filterbar">
       <label>

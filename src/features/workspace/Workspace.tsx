@@ -252,7 +252,16 @@ export function Workspace() {
         snapshot={result}
         onLocate={(id) => {
           setView("list");
-          setFilters(initialFilters);
+          const target = result.guests.find((g) => g.id === id);
+          setFilters(
+            target
+              ? {
+                  ...initialFilters,
+                  query: target.displayName,
+                  guestId: target.id,
+                }
+              : initialFilters,
+          );
           requestAnimationFrame(() =>
             requestAnimationFrame(() => {
               const element =
