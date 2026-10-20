@@ -6,11 +6,13 @@ import { errorMessage } from "../../lib/errors";
 export function AreaForm({
   eventId,
   initial,
+  defaultArea,
   execute,
   onClose,
 }: {
   eventId: string;
   initial?: VenueArea;
+  defaultArea?: Omit<VenueArea, "id">;
   execute: (action: () => Promise<unknown>) => Promise<void>;
   onClose: () => void;
 }) {
@@ -47,7 +49,10 @@ export function AreaForm({
       <form onSubmit={submit}>
         <label>
           区域类型
-          <select name="kind" defaultValue={initial?.kind ?? "stage"}>
+          <select
+            name="kind"
+            defaultValue={initial?.kind ?? defaultArea?.kind ?? "stage"}
+          >
             {Object.entries(areaLabels).map(([key, label]) => (
               <option key={key} value={key}>
                 {label}
@@ -61,7 +66,7 @@ export function AreaForm({
             name="label"
             required
             maxLength={60}
-            defaultValue={initial?.label ?? "舞台"}
+            defaultValue={initial?.label ?? defaultArea?.label ?? "舞台"}
           />
         </label>
         <div className="form-grid">
@@ -79,9 +84,9 @@ export function AreaForm({
                 name={key}
                 type="number"
                 min={key === "x" || key === "y" ? 0 : 40}
-                max={key === "x" || key === "y" ? 12000 : 2000}
+                max={12000}
                 required
-                defaultValue={initial?.[key] ?? fallback}
+                defaultValue={initial?.[key] ?? defaultArea?.[key] ?? fallback}
               />
             </label>
           ))}

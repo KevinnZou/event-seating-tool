@@ -1,3 +1,4 @@
+import { LayoutDialog } from "./LayoutDialog";
 import { tableChoices } from "../seating/tableChoices";
 import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
@@ -78,6 +79,8 @@ export function FloorPlan({
   onAddTable: () => void;
   onAddGuest: () => void;
 }) {
+  const [organizing, setOrganizing] = useState(false);
+  const [snap, setSnap] = useState(true);
   const [selection, setSelection] = useState<PlanSelection | null>(null),
     [layoutMode, setLayoutMode] = useState(false),
     [zoom, setZoom] = useState(1),
@@ -92,7 +95,7 @@ export function FloorPlan({
   );
   const choices = chosenGuest ? tableChoices(snapshot, chosenGuest) : [];
   const [activeGuest, setActiveGuest] = useState<GuestGroupEntity | null>(null);
-  const [area, setArea] = useState<VenueArea | "new" | null>(null);
+  const [area, setArea] = useState<VenueArea | "new" | "aisle" | null>(null);
   const [width, setWidth] = useState(800);
   const container = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -150,6 +153,23 @@ export function FloorPlan({
           <button aria-pressed={layoutMode} onClick={() => setLayoutMode(true)}>
             调整布局
           </button>
+          <button
+            disabled={busy || !snapshot.tables.length}
+            onClick={() => setOrganizing(true)}
+          >
+            一键整理
+          </button>
+          <button disabled={busy} onClick={() => setArea("aisle")}>
+            添加过道
+          </button>
+          <label className="check plan-snap">
+            <input
+              type="checkbox"
+              checked={snap}
+              onChange={(e) => setSnap(e.target.checked)}
+            />
+            吸附网格（20）
+          </label>
           <button onClick={() => setArea("new")} disabled={busy}>
             添加舞台 / 入口
           </button>
@@ -175,7 +195,7 @@ export function FloorPlan({
       </div>
       <p className="plan-mode-hint">
         {layoutMode
-          ? "拖动圆桌或区域调整位置。选中圆桌后可用方向键每次移动10，或在详情填写坐标；锁定桌不可移动。"
+          ? "拖动圆桌或区域调整位置。选中圆桌后可用方向键每次移动10，或在详情填写坐标；锁定桌不可移动，过道及缓冲区禁止放桌。"
           : "点击未安排宾客选择目标桌，或将整组拖入圆桌。点击圆桌查看名单和换桌菜单。"}
       </p>
       <DndContext
@@ -306,6 +326,7 @@ export function FloorPlan({
               layoutMode={layoutMode}
               busy={busy}
               scale={scale}
+              snapStep={snap ? 20 : 0}
               onPosition={(selected, point) =>
                 run(() =>
                   venueService.position(
@@ -404,22 +425,34 @@ export function FloorPlan({
         </form>
         <button
           disabled={busy || !snapshot.tables.length}
-          onClick={() => {
-            if (
-              window.confirm(
-                "按网格重新整理未锁定桌的位置？已有宾客安排、锁定桌和区域保持，可撤销。",
-              )
-            )
-              void run(() => venueService.arrange(snapshot.event.id));
-          }}
+          onClick={() => setOrganizing(true)}
         >
           自动整理未锁定桌
         </button>
       </details>
+      {organizing && (
+        <LayoutDialog
+          snapshot={snapshot}
+          execute={execute}
+          onClose={() => setOrganizing(false)}
+        />
+      )}
       {area && (
         <AreaForm
           eventId={snapshot.event.id}
-          initial={area === "new" ? undefined : area}
+          initial={typeof area === "string" ? undefined : area}
+          defaultArea={
+            area === "aisle"
+              ? {
+                  kind: "aisle",
+                  label: "中央过道",
+                  x: Math.round((venue.width - 120) / 2),
+                  y: 0,
+                  width: 120,
+                  height: venue.height,
+                }
+              : undefined
+          }
           execute={execute}
           onClose={() => setArea(null)}
         />

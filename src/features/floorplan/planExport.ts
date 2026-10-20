@@ -71,7 +71,7 @@ export function planSvg(input: Snapshot) {
   );
   for (const area of venue.areas) {
     parts.push(
-      `<rect x="${area.x}" y="${area.y}" width="${area.width}" height="${area.height}" rx="5" fill="${area.kind === "entrance" ? "#efe8d8" : "#dce8df"}" stroke="#82988e"/>`,
+      `<rect x="${area.x}" y="${area.y}" width="${area.width}" height="${area.height}" rx="5" fill="${area.kind === "aisle" ? "#f3dfb3" : area.kind === "entrance" ? "#efe8d8" : "#dce8df"}" stroke="#82988e"/>`,
     );
     const max = Math.max(2, Math.floor(area.width / 18));
     const rows = Array.from(

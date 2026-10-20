@@ -1,3 +1,4 @@
+import { snapPoint } from "../../domain/layoutPlanner";
 import { useRef, useState, type PointerEvent } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import type { Snapshot } from "../../domain/models";
@@ -98,6 +99,7 @@ export function PlanCanvas({
   layoutMode,
   busy,
   scale,
+  snapStep = 0,
   onPosition,
 }: {
   snapshot: Snapshot;
@@ -106,6 +108,7 @@ export function PlanCanvas({
   layoutMode: boolean;
   busy: boolean;
   scale: number;
+  snapStep?: number;
   onPosition: (selection: PlanSelection, point: Point) => Promise<void>;
 }) {
   const { venue, tables } = layoutOf(snapshot);
@@ -146,14 +149,38 @@ export function PlanCanvas({
       y: d.origin.y + (event.clientY - d.start.y) / scale,
     };
     if (d.selection.kind === "table")
-      return clampPoint(raw, venue.width, venue.height);
+      return snapStep
+        ? snapPoint(raw, venue.width, venue.height, snapStep)
+        : clampPoint(raw, venue.width, venue.height);
     return {
-      x: Math.round(Math.max(0, Math.min(venue.width - d.width, raw.x))),
-      y: Math.round(Math.max(0, Math.min(venue.height - d.height, raw.y))),
+      x: Math.round(
+        Math.max(
+          0,
+          Math.min(
+            venue.width - d.width,
+            snapStep ? Math.round(raw.x / snapStep) * snapStep : raw.x,
+          ),
+        ),
+      ),
+      y: Math.round(
+        Math.max(
+          0,
+          Math.min(
+            venue.height - d.height,
+            snapStep ? Math.round(raw.y / snapStep) * snapStep : raw.y,
+          ),
+        ),
+      ),
     };
   }
   function move(event: PointerEvent<HTMLButtonElement>) {
-    if (drag.current)
+    if (
+      drag.current &&
+      Math.hypot(
+        event.clientX - drag.current.start.x,
+        event.clientY - drag.current.start.y,
+      ) >= 3
+    )
       setPreview({
         selection: drag.current.selection,
         point: coordinates(event),
@@ -167,7 +194,10 @@ export function PlanCanvas({
     setPreview(null);
     if (event.currentTarget.hasPointerCapture(event.pointerId))
       event.currentTarget.releasePointerCapture(event.pointerId);
-    if (point.x !== d.origin.x || point.y !== d.origin.y)
+    if (
+      Math.hypot(event.clientX - d.start.x, event.clientY - d.start.y) >= 3 &&
+      (point.x !== d.origin.x || point.y !== d.origin.y)
+    )
       void onPosition(d.selection, point);
   }
   function cancel() {

@@ -429,3 +429,81 @@ test("名单布局：20桌零宾客与少量宾客均无侧栏空白，末桌仍
     ),
   ).toBe(true);
 });
+
+test("布局规则：中央过道预览确认/撤销，新增找空位，过道禁放与拖动吸附", async ({
+  page,
+}, testInfo) => {
+  await demo(page);
+  await page.getByRole("button", { name: "一键整理", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(
+    dialog.getByRole("img", { name: "自动整理布局预览" }),
+  ).toBeVisible();
+  await page.getByLabel("每行最多桌数", { exact: true }).fill("4");
+  await page.getByLabel("列间净距", { exact: true }).fill("80");
+  await expect(dialog.getByRole("status")).toContainText("新增中央过道");
+  if (process.env.CAPTURE_LAYOUT_RULES)
+    await page.screenshot({
+      path: `output/playwright/layout-rules/preview-${testInfo.project.name}.png`,
+    });
+  await page.getByRole("button", { name: "确认整理布局", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "区域 中央过道", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "撤销", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "区域 中央过道", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "重做", exact: true }).click();
+  await page.getByRole("button", { name: "调整布局", exact: true }).click();
+  const selectedTable = page.getByRole("button", { name: /^平面图 03 桌/ });
+  const originalX = await selectedTable.evaluate((el) =>
+    String(parseFloat((el.parentElement as HTMLElement).style.left) + 48),
+  );
+  await selectedTable.click();
+  await expect(page.getByLabel("选中项X坐标")).toHaveValue(originalX);
+  await page.getByRole("button", { name: "安排宾客", exact: true }).click();
+  await page.getByLabel("选中项X坐标").fill("600");
+  await page.getByLabel("选中项Y坐标").fill("400");
+  await page.getByRole("button", { name: "保存位置", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("过道");
+  await page.getByRole("button", { name: "关闭操作反馈" }).click();
+  await page.getByRole("button", { name: "新增桌位", exact: true }).click();
+  await page.getByLabel("展示桌号", { exact: true }).fill("88");
+  await page.getByRole("button", { name: "保存桌位", exact: true }).click();
+  await expect(page.getByTestId("stat-桌位数量")).toHaveText("4");
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "区域 中央过道", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "调整布局", exact: true }).click();
+  const table = page.getByRole("button", { name: /^平面图 88 桌/ });
+  await table.click();
+  const oldX = Number(await page.getByLabel("选中项X坐标").inputValue());
+  expect(oldX < 468 || oldX > 732).toBe(true);
+  if (!testInfo.project.use.isMobile) {
+    await table.scrollIntoViewIfNeeded();
+    const box = (await table.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(
+      box.x + box.width / 2 + 15,
+      box.y + box.height / 2 + 35,
+      { steps: 8 },
+    );
+    await page.mouse.up();
+    await expect
+      .poll(
+        async () =>
+          Number(await page.getByLabel("选中项X坐标").inputValue()) % 20,
+      )
+      .toBe(0);
+    await expect
+      .poll(
+        async () =>
+          Number(await page.getByLabel("选中项Y坐标").inputValue()) % 20,
+      )
+      .toBe(0);
+  }
+  await expect(page.getByTestId("stat-计划出席")).toHaveText("11");
+});
