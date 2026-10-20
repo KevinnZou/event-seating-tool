@@ -149,3 +149,20 @@ export async function createXlsx(s: Snapshot) {
   }
   return new Uint8Array(await workbook.xlsx.writeBuffer()).buffer;
 }
+
+export const templateRows: (string | number)[][] = [
+  ["名称", "人数", "分组", "桌号", "状态", "备注"],
+  ["虚构示例一家", 4, "亲友", "01", "确认", "请替换为自己的名单"],
+  ["虚构示例夫妻", 2, "朋友", "", "待定", "人数请填写正整数"],
+];
+export async function createTemplateXlsx() {
+  const { default: ExcelJS } = await import("exceljs");
+  const workbook = new ExcelJS.Workbook(),
+    sheet = workbook.addWorksheet("导入模板");
+  sheet.addRows(templateRows);
+  sheet.getRow(1).font = { bold: true };
+  sheet.columns.forEach((c, i) => {
+    c.width = i === 5 ? 36 : i === 0 ? 24 : 16;
+  });
+  return new Uint8Array(await workbook.xlsx.writeBuffer()).buffer;
+}

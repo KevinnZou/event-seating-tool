@@ -2,6 +2,8 @@ import { it, expect } from "vitest";
 import { fixture } from "./fixtures/snapshot";
 import {
   createCsv,
+  createTemplateXlsx,
+  templateRows,
   createXlsx,
   escapeSpreadsheetCell,
   guestRows,
@@ -46,4 +48,22 @@ it("XLSX生成可重新读取且公式文本为普通字符串", async () => {
 it("文件名过滤控制字符和路径且长名保留扩展名", () => {
   expect(safeFilename("../虚构/活动.json")).not.toContain("/");
   expect(safeFilename("长".repeat(200) + ".json")).toMatch(/\.json$/);
+});
+
+it("模板可由导入器读回且示例明确虚构", async () => {
+  expect(parseCsv(createCsv(templateRows))[1][1]).toBe("4");
+  const bytes = await createTemplateXlsx();
+  const workbook = await readWorkbook({
+    size: bytes.byteLength,
+    arrayBuffer: async () => bytes,
+  } as File);
+  expect(workbook[0].rows[0]).toEqual([
+    "名称",
+    "人数",
+    "分组",
+    "桌号",
+    "状态",
+    "备注",
+  ]);
+  expect(workbook[0].rows[1][0]).toContain("虚构");
 });

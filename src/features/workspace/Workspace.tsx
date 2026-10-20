@@ -186,6 +186,8 @@ export function Workspace() {
           run={run}
           busy={busy}
           onEdit={setTable}
+          onAddTable={() => setTable("new")}
+          onAddGuest={() => setGuest("new")}
         />
       ) : (
         <div className="workspace-grid">

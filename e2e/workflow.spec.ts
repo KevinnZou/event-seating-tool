@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
-test("导入纠错、同名保留、搜索、批量移桌与撤销重做", async ({ page }) => {
+test("导入纠错、同名保留、搜索、批量移桌与撤销重做", async ({
+  page,
+}, testInfo) => {
   await page.goto("/");
   await page.getByRole("button", { name: "试用虚构演示" }).click();
   await page.getByRole("button", { name: "导入名单", exact: true }).click();
@@ -11,6 +13,11 @@ test("导入纠错、同名保留、搜索、批量移桌与撤销重做", async
     page.getByRole("button", { name: "核对完成，下一步" }),
   ).toBeDisabled();
   await page.getByLabel("第4行人数").fill("2");
+  if (process.env.CAPTURE_QA)
+    await page.screenshot({
+      path: `docs/design/v01/import-${testInfo.project.name}.png`,
+      fullPage: true,
+    });
   await page.getByRole("button", { name: "核对完成，下一步" }).click();
   await page.getByRole("button", { name: "确认导入", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("已新增 4 组");
@@ -24,6 +31,7 @@ test("导入纠错、同名保留、搜索、批量移桌与撤销重做", async
   await page
     .getByRole("checkbox", { name: "选择 虚构导入一家", exact: true })
     .check();
+  await page.getByLabel("搜索目标桌号").fill("01");
   await page.getByLabel("批量目标桌").selectOption({ label: "01 桌" });
   await page.getByRole("button", { name: "移动所选", exact: true }).click();
   await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
@@ -39,6 +47,11 @@ test("导入纠错、同名保留、搜索、批量移桌与撤销重做", async
   await expect(
     page.getByRole("heading", { name: "03 桌", exact: true }).locator(".."),
   ).toContainText("4 / 10");
+  if (process.env.CAPTURE_QA)
+    await page.screenshot({
+      path: `docs/design/v01/board-${testInfo.project.name}.png`,
+      fullPage: true,
+    });
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -103,6 +116,11 @@ test("完整备份下载、清空、恢复、报表与打印预览", async ({ pa
   await page.getByRole("button", { name: "下载Excel工作簿" }).click();
   const excel = await excelWait;
   expect(excel.suggestedFilename()).toMatch(/\.xlsx$/);
+  if (process.env.CAPTURE_QA)
+    await page.screenshot({
+      path: `docs/design/v01/export-${testInfo.project.name}.png`,
+      fullPage: true,
+    });
   await page.emulateMedia({ media: "print" });
   await expect(
     page.getByRole("heading", { name: "虚构演示婚宴（恢复）" }),
@@ -160,6 +178,11 @@ for (const people of [300, 500])
       String(people),
     );
     expect(searchMs).toBeLessThan(5000);
+    const { writeFile } = await import("node:fs/promises");
+    await writeFile(
+      testInfo.outputPath("performance.json"),
+      JSON.stringify({ people, tables: people / 10, importedMs, searchMs }),
+    );
     await testInfo.attach("performance.json", {
       body: JSON.stringify({
         people,
@@ -169,6 +192,17 @@ for (const people of [300, 500])
       }),
       contentType: "application/json",
     });
+    if (people === 300 && testInfo.project.name === "chromium") {
+      await page.getByRole("link", { name: "导出交付", exact: true }).click();
+      await page.getByLabel("桌卡版式").check();
+      await page.getByLabel("奇偶桌分组（自定义桌单列）").check();
+      await page.emulateMedia({ media: "print" });
+      await page.pdf({
+        path: testInfo.outputPath("fictional-300-cards.pdf"),
+        format: "A4",
+        preferCSSPageSize: true,
+      });
+    }
   });
 
 test("桌卡整组移动：桌面拖放与手机菜单", async ({ page }, testInfo) => {

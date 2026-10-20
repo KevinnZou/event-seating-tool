@@ -14,7 +14,8 @@ export function BatchActions({
   run: (a: () => Promise<unknown>) => Promise<void>;
   busy: boolean;
 }) {
-  const [target, setTarget] = useState("");
+  const [target, setTarget] = useState("choose"),
+    [targetQuery, setTargetQuery] = useState("");
   return (
     <div className="batchbar">
       <span>
@@ -24,20 +25,36 @@ export function BatchActions({
           .reduce((n, g) => n + g.size, 0)}{" "}
         人
       </span>
+      {selected.length > 0 && (
+        <input
+          aria-label="搜索目标桌号"
+          placeholder="搜索目标桌号"
+          value={targetQuery}
+          onChange={(e) => {
+            setTargetQuery(e.target.value);
+            setTarget("choose");
+          }}
+        />
+      )}
       <select
         aria-label="批量目标桌"
         value={target}
         onChange={(e) => setTarget(e.target.value)}
       >
+        <option value="choose">请选择目标</option>
         <option value="">未安排区</option>
-        {snapshot.tables.map((t) => (
-          <option key={t.id} value={t.id} disabled={t.locked}>
-            {t.label} 桌{t.locked ? "（锁定）" : ""}
-          </option>
-        ))}
+        {snapshot.tables
+          .filter((t) =>
+            t.label.toLowerCase().includes(targetQuery.toLowerCase().trim()),
+          )
+          .map((t) => (
+            <option key={t.id} value={t.id} disabled={t.locked}>
+              {t.label} 桌{t.locked ? "（锁定）" : ""}
+            </option>
+          ))}
       </select>
       <button
-        disabled={busy || !selected.length}
+        disabled={busy || !selected.length || target === "choose"}
         onClick={() =>
           void run(() =>
             workspaceService.move(snapshot.event.id, selected, target || null),

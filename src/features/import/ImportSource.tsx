@@ -1,3 +1,5 @@
+import { createCsv, templateRows, createTemplateXlsx } from "../export/reports";
+import { download } from "../../lib/download";
 import { errorMessage } from "../../lib/errors";
 import { useState } from "react";
 import {
@@ -33,6 +35,42 @@ export function ImportSource({
   const cells = sheets[sheet]?.rows ?? [];
   return (
     <>
+      <div className="actions">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() =>
+            download(
+              createCsv(templateRows),
+              "智能排桌_虚构示例模板.csv",
+              "text/csv;charset=utf-8",
+            )
+          }
+        >
+          下载CSV模板
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            setError("");
+            try {
+              download(
+                await createTemplateXlsx(),
+                "智能排桌_虚构示例模板.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              );
+            } catch (e) {
+              setError(errorMessage(e, "模板生成失败"));
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          下载Excel模板
+        </button>
+      </div>
       <label>
         粘贴文本
         <textarea
@@ -163,7 +201,7 @@ export function ImportSource({
           }
         }}
       >
-        {busy ? "正在读取文件…" : "生成预览"}
+        {busy ? "正在处理…" : "生成预览"}
       </button>
       {error && (
         <p className="error" role="alert">

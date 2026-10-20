@@ -132,12 +132,16 @@ export function Board({
   run,
   busy,
   onEdit,
+  onAddTable,
+  onAddGuest,
 }: {
   snapshot: Snapshot;
   filters: Filters;
   run: (a: () => Promise<unknown>) => Promise<void>;
   busy: boolean;
   onEdit: (t: TableEntity) => void;
+  onAddTable: () => void;
+  onAddGuest: () => void;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -159,6 +163,12 @@ export function Board({
           );
       }}
     >
+      <div className="actions">
+        <button onClick={onAddTable}>新增桌位</button>
+        <button className="primary" onClick={onAddGuest}>
+          新增宾客组
+        </button>
+      </div>
       <div className="board-toolbar">
         <p className="muted">
           拖动整组宾客，或使用每组的桌位菜单。锁定桌需先解锁。
