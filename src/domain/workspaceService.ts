@@ -11,11 +11,18 @@ export class WorkspaceService {
   async replace(s: Snapshot) {
     const safe = parseSnapshot(s),
       d = this.repo.database;
-    await d.guests.where("eventId").equals(safe.event.id).delete();
-    await d.seatingTables.where("eventId").equals(safe.event.id).delete();
-    await d.events.put({ ...safe.event, updatedAt: new Date().toISOString() });
-    await d.guests.bulkAdd(safe.guests);
-    await d.seatingTables.bulkAdd(safe.tables);
+    // Keep this primitive atomic even when called outside a command transaction.
+    // Dexie reuses a compatible parent transaction for import/history/restore.
+    await this.repo.transaction(async () => {
+      await d.guests.where("eventId").equals(safe.event.id).delete();
+      await d.seatingTables.where("eventId").equals(safe.event.id).delete();
+      await d.events.put({
+        ...safe.event,
+        updatedAt: new Date().toISOString(),
+      });
+      await d.guests.bulkAdd(safe.guests);
+      await d.seatingTables.bulkAdd(safe.tables);
+    });
   }
   move(eventId: string, ids: string[], target: string | null) {
     return this.repo.transaction(async () => {

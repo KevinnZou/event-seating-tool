@@ -202,3 +202,17 @@ it("拆分拒绝零数、小数、少人、多人及空名称，不写入部分�
   ).rejects.toThrow();
   expect(await repo.snapshot(id)).toEqual(s);
 });
+
+it("直接替换快照中途写入失败时恢复所有原数据，保护其他活动", async () => {
+  const before = await repo.snapshot(id);
+  const otherId = await crud.copyEvent(id);
+  const other = await repo.snapshot(otherId);
+  const invalid = structuredClone(before);
+  // Valid snapshot internally, but its table ID collides with another activity.
+  // Failure happens after the target's guests/tables were deleted and guests re-added.
+  invalid.tables[0].id = other.tables[0].id;
+  invalid.guests[0].displayName = "虚构不应保存的改名";
+  await expect(svc.replace(invalid)).rejects.toThrow();
+  expect(await repo.snapshot(id)).toEqual(before);
+  expect(await repo.snapshot(otherId)).toEqual(other);
+});
