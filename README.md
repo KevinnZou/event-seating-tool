@@ -15,6 +15,8 @@ npm run dev
 
 V0.2整体验收：[docs/ACCEPTANCE_V0.2.md](docs/ACCEPTANCE_V0.2.md)。V0.1历史记录：[docs/REVIEW_READY.md](docs/REVIEW_READY.md)。发布准备：[docs/release/PUBLISH.md](docs/release/PUBLISH.md)。
 
+本轮[UI与交互走查记录](docs/UI_REVIEW_V0.2.md)：平面图点选整组安排、余席提示、视图刷新保留、手机详情定位与操作区优化。
+
 ## 页面与功能
 
 - `/#/`：本地活动列表，创建/编辑/复制/删除活动，虚构演示，完整备份恢复，确认清空本地数据。
