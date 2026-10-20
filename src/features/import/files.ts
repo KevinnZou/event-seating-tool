@@ -50,7 +50,7 @@ export async function readWorkbook(file: File) {
             ? ""
             : typeof v === "object"
               ? "formula" in v || "sharedFormula" in v
-                ? "[公式需人工替换]"
+                ? `[公式需人工替换] ${"formula" in v ? v.formula : v.sharedFormula}`
                 : cell.text
               : String(v),
         );

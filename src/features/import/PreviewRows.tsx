@@ -1,15 +1,22 @@
+import { useState } from "react";
+import type { Snapshot } from "../../domain/models";
 import { fields, fieldLabels, rowErrors, type DraftRow } from "./parsers";
 export function PreviewRows({
   rows,
   page,
   setPage,
   editRow,
+  snapshot,
+  mode,
 }: {
   rows: DraftRow[];
+  snapshot: Snapshot;
+  mode: "append" | "replace";
   page: number;
   setPage: (p: number) => void;
   editRow: (id: string, patch: Partial<DraftRow>) => void;
 }) {
+  const [choosing, setChoosing] = useState<string | null>(null);
   return (
     <>
       <div className="scroll preview-table">
@@ -20,6 +27,7 @@ export function PreviewRows({
               {fields.map((f) => (
                 <th key={f}>{fieldLabels[f]}</th>
               ))}
+              <th>新增 / 指定更新</th>
               <th>核对</th>
             </tr>
           </thead>
@@ -75,6 +83,48 @@ export function PreviewRows({
                     )}
                   </td>
                 ))}
+                <td>
+                  {r.targetId || choosing === r.id ? (
+                    <>
+                      <select
+                        aria-label={`第${r.line}行更新目标`}
+                        disabled={mode === "replace"}
+                        value={r.targetId ?? ""}
+                        onChange={(e) =>
+                          editRow(r.id, {
+                            targetId: e.target.value || undefined,
+                          })
+                        }
+                      >
+                        <option value="">新增独立记录</option>
+                        {snapshot.guests.map((g) => (
+                          <option key={g.id} value={g.id}>
+                            {g.displayName} · {g.size}人 ·{" "}
+                            {g.category || "未分组"} · {g.id.slice(0, 8)}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  ) : (
+                    <>
+                      <p>新增独立记录</p>
+                      <button
+                        disabled={mode === "replace"}
+                        onClick={() => setChoosing(r.id)}
+                      >
+                        指定更新
+                      </button>
+                    </>
+                  )}
+                  {r.targetId && (
+                    <p className="muted">
+                      明确更新：原
+                      {snapshot.guests.find((g) => g.id === r.targetId)?.size}人
+                      → {r.size}
+                      人。本行所有字段（含空桌号与备注）将替换原值，ID保留。
+                    </p>
+                  )}
+                </td>
                 <td>
                   {rowErrors(r).join("；") || "可导入"}
                   {r.review && (

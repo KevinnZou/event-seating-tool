@@ -40,8 +40,9 @@ export function ImportWizard({
   }
   const duplicate = included.filter(
     (r, i) =>
-      base.guests.some((g) => g.displayName === r.name) ||
-      included.slice(0, i).some((g) => g.name === r.name),
+      base.guests.some(
+        (g) => g.displayName === r.name && g.id !== r.targetId,
+      ) || included.slice(0, i).some((g) => g.name === r.name),
   ).length;
   function editRow(id: string, patch: Partial<DraftRow>) {
     setRows(rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -65,7 +66,8 @@ export function ImportWizard({
         ) : step === 1 || step === 2 ? (
           <>
             <p>
-              本次新增 {included.length} 组；明确排除{" "}
+              本次新增 {included.filter((r) => !r.targetId).length} 组；指定更新{" "}
+              {included.filter((r) => r.targetId).length} 组；明确排除{" "}
               {rows.length - included.length} 行；错误 {invalid} 行；疑似同名{" "}
               {duplicate} 行（全部保留独立记录）。
             </p>
@@ -77,7 +79,9 @@ export function ImportWizard({
                   setMode(e.target.value as "append" | "replace")
                 }
               >
-                <option value="append">新增到现有名单</option>
+                <option value="append">
+                  新增 / 逐行指定更新（不自动合并）
+                </option>
                 <option value="replace">替换全部名单（保留桌位）</option>
               </select>
             </label>
@@ -99,6 +103,8 @@ export function ImportWizard({
             {step === 1 ? (
               <>
                 <PreviewRows
+                  snapshot={base}
+                  mode={mode}
                   rows={rows}
                   page={page}
                   setPage={setPage}
@@ -152,7 +158,7 @@ export function ImportWizard({
                         );
                         historyService.clear(base.event.id);
                         setReport(
-                          `已新增 ${r.added} 组，明确排除 ${r.skipped} 行。当前计划出席 ${r.planned} 人。导入前检查点已保存。`,
+                          `已新增 ${r.added} 组，已更新 ${r.updated} 组，明确排除 ${r.skipped} 行。当前计划出席 ${r.planned} 人。导入前检查点已保存。`,
                         );
                         setStep(3);
                       } catch (e) {

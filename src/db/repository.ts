@@ -6,20 +6,28 @@ export class Repository {
     this.database = database;
   }
   async snapshot(eventId: string): Promise<Snapshot> {
-    const event = await this.database.events.get(eventId);
-    if (!event) throw new Error("本机无此活动");
-    return {
-      event,
-      guests: await this.database.guests
-        .where("eventId")
-        .equals(eventId)
-        .sortBy("orderIndex"),
-      tables: await this.database.seatingTables
-        .where("eventId")
-        .equals(eventId)
-        .sortBy("orderIndex"),
-    };
+    const d = this.database;
+    return d.transaction(
+      "r",
+      [d.events, d.guests, d.seatingTables],
+      async () => {
+        const event = await d.events.get(eventId);
+        if (!event) throw new Error("本机无此活动");
+        return {
+          event,
+          guests: await d.guests
+            .where("eventId")
+            .equals(eventId)
+            .sortBy("orderIndex"),
+          tables: await d.seatingTables
+            .where("eventId")
+            .equals(eventId)
+            .sortBy("orderIndex"),
+        };
+      },
+    );
   }
+
   transaction<T>(action: () => Promise<T>) {
     const d = this.database;
     return d.transaction(

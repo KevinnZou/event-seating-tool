@@ -170,3 +170,70 @@ for (const people of [300, 500])
       contentType: "application/json",
     });
   });
+
+test("桌卡整组移动：桌面拖放与手机菜单", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "试用虚构演示" }).click();
+  await page.getByRole("button", { name: "排桌工作台", exact: true }).click();
+  if (testInfo.project.name === "mobile") {
+    await page
+      .getByLabel("工作台安排 示例小禾一家")
+      .selectOption({ label: "03 桌" });
+  } else {
+    const source = page.getByRole("button", {
+      name: "拖动 示例小禾一家",
+      exact: true,
+    });
+    const target = page.locator("section.board-zone").filter({
+      has: page.getByRole("heading", { name: "03 桌", exact: true }),
+    });
+    await page.locator(".seating-board").scrollIntoViewIfNeeded();
+    await source.scrollIntoViewIfNeeded();
+    const a = await source.boundingBox(),
+      b = await target.boundingBox();
+
+    expect(a).not.toBeNull();
+    expect(b).not.toBeNull();
+    await page.mouse.move(a!.x + a!.width / 2, a!.y + a!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(a!.x + a!.width / 2 + 12, a!.y + a!.height / 2 + 12, {
+      steps: 3,
+    });
+    await page.mouse.move(b!.x + b!.width / 2, b!.y + b!.height / 2, {
+      steps: 20,
+    });
+    await expect(target).toHaveClass(/drop-over/);
+    await page.mouse.up();
+  }
+  await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+  await expect(page.getByLabel("工作台安排 示例小禾一家")).not.toHaveValue("");
+  await page.getByRole("button", { name: "撤销", exact: true }).click();
+  await expect(page.getByTestId("stat-已安排人数")).toHaveText("0");
+});
+
+test("导入只能显式指定更新，保留ID且人数变更可见", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "试用虚构演示" }).click();
+  await page.getByRole("button", { name: "导入名单", exact: true }).click();
+  await page.getByLabel("粘贴文本").fill("虚构改名一家(3)");
+  await page.getByRole("button", { name: "生成预览" }).click();
+  await page.getByRole("button", { name: "指定更新", exact: true }).click();
+  const option = page
+    .getByLabel("第1行更新目标")
+    .locator("option")
+    .filter({ hasText: "示例小禾一家" });
+  await page
+    .getByLabel("第1行更新目标")
+    .selectOption((await option.getAttribute("value"))!);
+  await expect(page.getByText(/原4人 → 3人/)).toBeVisible();
+  await page.getByRole("button", { name: "核对完成，下一步" }).click();
+  await page.getByRole("button", { name: "确认导入", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText(
+    "已新增 0 组，已更新 1 组",
+  );
+  await page.getByRole("button", { name: "完成", exact: true }).click();
+  await expect(page.getByTestId("stat-计划出席")).toHaveText("10");
+  await expect(
+    page.getByRole("heading", { name: "宾客组（6）" }),
+  ).toBeVisible();
+});

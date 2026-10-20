@@ -21,9 +21,20 @@ export function planImport(
     s.tables.some((t) => t.locked && s.guests.some((g) => g.tableId === t.id))
   )
     throw new Error("替换会影响锁定桌，请先解锁");
+  const targets = chosen.filter((r) => r.targetId).map((r) => r.targetId!);
+  if (new Set(targets).size !== targets.length)
+    throw new Error("不能用多行重复更新同一宾客组");
+  if (mode === "replace" && targets.length)
+    throw new Error("替换模式不允许指定更新目标");
   const tables = [...s.tables];
   const guests = mode === "replace" ? [] : [...s.guests];
   for (const r of chosen) {
+    const old = r.targetId
+      ? s.guests.find((g) => g.id === r.targetId)
+      : undefined;
+    if (r.targetId && !old) throw new Error("指定更新的宾客不属于当前活动");
+    if (old?.tableId && tables.some((t) => t.id === old.tableId && t.locked))
+      throw new Error("指定更新的宾客在锁定桌，请先解锁");
     let tableId: string | null = null;
     if (r.table) {
       let table = tables.find(
@@ -51,20 +62,23 @@ export function planImport(
       tableId = table.id;
     }
     const timestamp = new Date().toISOString();
-    guests.push({
-      id: crypto.randomUUID(),
+    const record: GuestGroupEntity = {
+      ...old,
+      id: old?.id ?? crypto.randomUUID(),
       eventId: s.event.id,
       displayName: r.name.trim(),
       size: Number(r.size),
-      kind: "other",
+      kind: old?.kind ?? "other",
       category: r.category,
       note: r.note,
       attendance: r.attendance as GuestGroupEntity["attendance"],
       tableId,
-      orderIndex: nextOrderIndex(guests),
-      createdAt: timestamp,
+      orderIndex: old?.orderIndex ?? nextOrderIndex(guests),
+      createdAt: old?.createdAt ?? timestamp,
       updatedAt: timestamp,
-    });
+    };
+    if (old) guests[guests.findIndex((g) => g.id === old.id)] = record;
+    else guests.push(record);
   }
   return parseSnapshot({ ...s, tables, guests });
 }
@@ -91,7 +105,8 @@ export class ImportService {
       await new CheckpointService(this.repo).create(eventId, "import");
       await new WorkspaceService(this.repo).replace(planned);
       return {
-        added: rows.filter((r) => r.included).length,
+        added: rows.filter((r) => r.included && !r.targetId).length,
+        updated: rows.filter((r) => r.included && r.targetId).length,
         skipped: rows.filter((r) => !r.included).length,
         planned: planned.guests.reduce(
           (n, g) => n + (g.attendance === "declined" ? 0 : g.size),

@@ -47,3 +47,23 @@ it("无效ZIP与过大解压数据拒绝", () => {
   d.setUint32(24, 40 * 1024 * 1024, true);
   expect(() => checkZip(bytes)).toThrow("过大");
 });
+
+it("只有显式目标ID才能更新，重复目标或跨活动ID拒绝", () => {
+  const s = fixture(),
+    rows = parseText("虚构更新组(2)");
+  rows[0].targetId = s.guests[0].id;
+  const planned = planImport(s, rows, "append", false);
+  expect(planned.guests).toHaveLength(s.guests.length);
+  expect(planned.guests[0].id).toBe(s.guests[0].id);
+  expect(planned.guests[0].size).toBe(2);
+  expect(() =>
+    planImport(
+      s,
+      [rows[0], { ...rows[0], id: crypto.randomUUID() }],
+      "append",
+      false,
+    ),
+  ).toThrow("多行");
+  rows[0].targetId = crypto.randomUUID();
+  expect(() => planImport(s, rows, "append", false)).toThrow("当前活动");
+});

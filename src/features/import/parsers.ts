@@ -9,6 +9,7 @@ export interface DraftRow {
   table: string;
   attendance: string;
   note: string;
+  targetId?: string;
   included: boolean;
   review: boolean;
 }
