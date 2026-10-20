@@ -144,6 +144,12 @@ export function mapRows(cells: string[][], mapping: Mapping, header = true) {
 }
 export function rowErrors(r: DraftRow) {
   const result: string[] = [];
+  if (
+    [r.name, r.size, r.category, r.table, r.note].some((v) =>
+      v.includes("[公式需人工替换]"),
+    )
+  )
+    result.push("公式单元格需人工替换为文字");
   if (!r.name.trim() || r.name.trim().length > 100)
     result.push("名称需1–100字");
   if (
