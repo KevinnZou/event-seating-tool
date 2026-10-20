@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>修复页面加载 · 智能排桌助手</title>
+    <style>
+      body {
+        font:
+          16px/1.7 -apple-system,
+          BlinkMacSystemFont,
+          "PingFang SC",
+          sans-serif;
+        color: #182d31;
+        background: #f5f7f8;
+        margin: 0;
+      }
+      main {
+        max-width: 620px;
+        margin: 8vh auto;
+        padding: 28px;
+        background: white;
+        border: 1px solid #dce5e5;
+        border-radius: 12px;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      button,
+      a {
+        display: inline-block;
+        font: inherit;
+        padding: 10px 16px;
+        border: 1px solid #14665f;
+        border-radius: 6px;
+        color: #14665f;
+        text-decoration: none;
+        background: white;
+        cursor: pointer;
+      }
+      button {
+        background: #14665f;
+        color: white;
+      }
+      button:disabled {
+        opacity: 0.5;
+      }
+      p {
+        overflow-wrap: anywhere;
+      }
+      .actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      #status {
+        padding: 14px;
+        background: #e3f1f0;
+      }
+      @media (max-width: 650px) {
+        main {
+          margin: 20px 16px;
+          padding: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>修复页面加载</h1>
+      <p>
+        此入口独立于应用离线缓存。它只更新应用文件，不读取、删除或重建活动数据库。
+      </p>
+      <p>
+        如果其他标签页还能操作，请先下载JSON备份、保存未提交内容，再关闭其他本工具标签页。不要清理站点数据。
+      </p>
+      <p id="status" role="status">点击下方按钮获取最新应用。需要联网。</p>
+      <div class="actions">
+        <button id="repair">更新应用并重新打开</button><a href="./">返回应用</a>
+      </div>
+    </main>
+    <script type="module">
+      const button = document.getElementById("repair");
+      const status = document.getElementById("status");
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        const timer = setTimeout(() => {
+          status.textContent =
+            "更新等待较久，请检查网络或关闭其他旧版标签页后重试。活动数据未删除。";
+          button.disabled = false;
+        }, 15000);
+        try {
+          if (!("serviceWorker" in navigator))
+            throw new Error("此浏览器不支持应用缓存更新，请尝试联网重新打开。");
+          status.textContent = "正在获取最新应用文件…";
+          const registration = await navigator.serviceWorker.register(
+            new URL("sw.js", location.href),
+            { updateViaCache: "none" },
+          );
+          await registration.update();
+          let worker = registration.waiting;
+          if (!worker && registration.installing) {
+            worker = await new Promise((resolve, reject) => {
+              const installing = registration.installing;
+              const check = () => {
+                if (installing.state === "installed")
+                  resolve(registration.waiting);
+                if (installing.state === "redundant")
+                  reject(new Error("应用文件下载失败，请检查网络后重试。"));
+              };
+              installing.addEventListener("statechange", check);
+              check();
+            });
+          }
+          if (worker) {
+            status.textContent = "应用文件已就绪，正在切换新版本…";
+            await new Promise((resolve, reject) => {
+              const check = () => {
+                if (worker.state === "activated") resolve();
+                if (worker.state === "redundant")
+                  reject(new Error("更新未完成，请重试。"));
+              };
+              worker.addEventListener("statechange", check);
+              worker.postMessage({ type: "ACTIVATE_UPDATE" });
+              check();
+            });
+          }
+          clearTimeout(timer);
+          location.replace(new URL("./", location.href));
+        } catch (error) {
+          clearTimeout(timer);
+          status.textContent =
+            error instanceof Error
+              ? error.message
+              : "更新失败，请检查网络后重试。";
+          button.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

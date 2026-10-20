@@ -190,3 +190,115 @@ test("应用更新先等待确认，刷新后本机活动不丢失", async ({ pa
     await writeFile("dist/sw.js", original);
   }
 });
+
+test("数据库升级被其他标签占用时说明原因，释放后自动恢复且保留活动", async ({
+  page,
+  context,
+}) => {
+  await page.route("**/holder.html", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: "<title>虚构升级阻塞测试</title>",
+    }),
+  );
+  await page.goto("./holder.html");
+  const eventId = "00000000-0000-4000-8000-000000000041";
+  await page.evaluate(async (id) => {
+    const request = indexedDB.open("event-seating-tool-local-v1", 30);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      const stores = {
+        events: ["updatedAt"],
+        guests: ["eventId", "tableId", "[eventId+tableId]"],
+        seatingTables: ["eventId", "[eventId+orderIndex]"],
+        checkpoints: ["eventId", "createdAt"],
+        localMeta: [],
+      };
+      for (const [name, indexes] of Object.entries(stores)) {
+        const store = db.createObjectStore(name, {
+          keyPath: name === "localMeta" ? "key" : "id",
+        });
+        for (const key of indexes)
+          store.createIndex(
+            key,
+            key.startsWith("[") ? key.slice(1, -1).split("+") : key,
+          );
+      }
+    };
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    db.onversionchange = () => {}; // Deliberately hold an old tab open to reproduce a blocked upgrade.
+    (window as unknown as { heldDB: IDBDatabase }).heldDB = db;
+    const tx = db.transaction("events", "readwrite");
+    tx.objectStore("events").put({
+      id,
+      name: "虚构升级保留活动",
+      type: "banquet",
+      defaultCapacity: 10,
+      overCapacityPolicy: "block",
+      schemaVersion: 1,
+      createdAt: "2026-10-20T00:00:00.000Z",
+      updatedAt: "2026-10-20T00:00:00.000Z",
+    });
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }, eventId);
+  const app = await context.newPage();
+  await app.goto("./");
+  await expect(
+    app.getByRole("heading", { name: "正在等待其他标签页释放数据" }),
+  ).toBeVisible();
+  await expect(
+    app.getByRole("link", { name: "修复页面加载", exact: true }),
+  ).toBeVisible();
+  if (process.env.CAPTURE_RECOVERY)
+    await app.screenshot({
+      path: `output/playwright/recovery/blocked-${test.info().project.name}.png`,
+    });
+  await page.evaluate(() =>
+    (window as unknown as { heldDB: IDBDatabase }).heldDB.close(),
+  );
+  await expect(
+    app.getByRole("heading", { name: "虚构升级保留活动", exact: true }),
+  ).toBeVisible();
+  await app.reload();
+  await expect(
+    app.getByRole("heading", { name: "虚构升级保留活动", exact: true }),
+  ).toBeVisible();
+});
+
+test("生产版连续刷新与独立加载修复入口均保留宾客安排", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "试用虚构演示", exact: true }).click();
+  await page
+    .getByLabel("安排 示例小禾一家 的桌位")
+    .selectOption({ label: "03 桌" });
+  await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+  const url = page.url();
+  for (let i = 0; i < 3; i++) {
+    await page.reload();
+    await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+  }
+  await page.goto("./recover.html");
+  await expect(
+    page.getByRole("heading", { name: "修复页面加载", exact: true }),
+  ).toBeVisible();
+  if (process.env.CAPTURE_RECOVERY)
+    await page.screenshot({
+      path: `output/playwright/recovery/entry-${test.info().project.name}.png`,
+    });
+  await page
+    .getByRole("button", { name: "更新应用并重新打开", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "本地活动", exact: true }),
+  ).toBeVisible();
+  await page.goto(url);
+  await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+  await page.reload();
+  await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+});
