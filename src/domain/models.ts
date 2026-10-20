@@ -1,3 +1,4 @@
+import { pointSchema, venueSchema } from "./venueModels";
 import { z } from "zod";
 export const countSchema = z.number().int().min(1).max(999);
 const timestamp = z.string().datetime();
@@ -12,6 +13,7 @@ export const eventSchema = z.object({
   createdAt: timestamp,
   updatedAt: timestamp,
   schemaVersion: z.literal(1),
+  venue: venueSchema.optional(),
 });
 export const guestSchema = z.object({
   id,
@@ -29,6 +31,7 @@ export const guestSchema = z.object({
   updatedAt: timestamp,
 });
 export const tableSchema = z.object({
+  position: pointSchema.optional(),
   id,
   eventId: id,
   label: z.string().trim().min(1).max(40),
@@ -59,6 +62,7 @@ export interface LocalCheckpoint {
   eventId: string;
   createdAt: string;
   reason: "import" | "bulk-edit" | "manual";
+  name?: string;
   snapshot: unknown;
 }
 export type EventInput = Pick<

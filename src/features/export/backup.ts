@@ -11,13 +11,14 @@ export const checkpointSchema = z.object({
   eventId: z.string().uuid(),
   createdAt: z.string().datetime(),
   reason: z.enum(["import", "bulk-edit", "manual"]),
+  name: z.string().trim().min(1).max(80).optional(),
   snapshot: snapshotSchema,
 });
 export const bundleSchema = z
   .object({
     format: z.literal("event-seating-backup"),
-    schemaVersion: z.literal(1),
-    appVersion: z.literal("0.1.0"),
+    schemaVersion: z.union([z.literal(1), z.literal(2)]),
+    appVersion: z.enum(["0.1.0", "0.2.0"]),
     exportedAt: z.string().datetime(),
     scope: z.enum(["all-events", "single-event"]),
     events: z.array(eventSchema).max(200),
@@ -29,6 +30,23 @@ export const bundleSchema = z
 export type Backup = z.infer<typeof bundleSchema>;
 export function parseBackup(input: unknown): Backup {
   const b = bundleSchema.parse(input);
+  if (
+    (b.schemaVersion === 1 && b.appVersion !== "0.1.0") ||
+    (b.schemaVersion === 2 && b.appVersion !== "0.2.0")
+  )
+    throw new Error("备份版本组合无效");
+  if (
+    b.schemaVersion === 1 &&
+    (b.events.some((e) => e.venue) ||
+      b.tables.some((t) => t.position) ||
+      b.checkpoints.some(
+        (cp) =>
+          cp.name ||
+          cp.snapshot.event.venue ||
+          cp.snapshot.tables.some((t) => t.position),
+      ))
+  )
+    throw new Error("V0.2布局与命名版本须使用V2备份，避免旧应用丢失字段");
   if (b.scope === "single-event" && b.events.length !== 1)
     throw new Error("单活动备份须包含一场活动");
   const ids = new Set<string>();
@@ -74,7 +92,7 @@ export function decodeBackup(text: string) {
     return parseBackup(input);
   } catch (e) {
     if (e instanceof z.ZodError)
-      throw new Error("备份版本或字段无效，请使用本应用导出的V1备份", {
+      throw new Error("备份版本或字段无效，请使用本应用导出的V1/V2备份", {
         cause: e,
       });
     throw e;

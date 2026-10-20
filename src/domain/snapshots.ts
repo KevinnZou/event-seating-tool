@@ -1,3 +1,4 @@
+import { layoutErrors } from "./geometry";
 import { z } from "zod";
 import { eventSchema, guestSchema, tableSchema, type Snapshot } from "./models";
 import { validateEvent } from "./calculations";
@@ -8,6 +9,8 @@ export const snapshotSchema = z.object({
 });
 export function parseSnapshot(input: unknown): Snapshot {
   const s = snapshotSchema.parse(input);
+  const geometryErrors = layoutErrors(s);
+  if (geometryErrors.length) throw new Error(geometryErrors.join("；"));
   const issues = validateEvent(s).filter((i) => i.severity === "error");
   if (
     s.guests.some(

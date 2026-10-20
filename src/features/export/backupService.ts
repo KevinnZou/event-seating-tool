@@ -19,8 +19,8 @@ export class BackupService {
           ids = new Set(events.map((e) => e.id));
         return parseBackup({
           format: "event-seating-backup",
-          schemaVersion: 1,
-          appVersion: "0.1.0",
+          schemaVersion: 2,
+          appVersion: "0.2.0",
           exportedAt: new Date().toISOString(),
           scope: eventId ? "single-event" : "all-events",
           events,

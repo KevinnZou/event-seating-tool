@@ -26,6 +26,15 @@ export class SeatingDB extends Dexie {
       checkpoints: "id, eventId, createdAt",
       localMeta: "key",
     });
+    // V0.2 keeps existing stores/IDs and adds optional layout/version fields.
+    // Version gating prevents an old V0.1 tab from stripping these fields on write.
+    this.version(3).stores({
+      events: "id, updatedAt",
+      guests: "id, eventId, tableId, [eventId+tableId]",
+      seatingTables: "id, eventId, [eventId+orderIndex]",
+      checkpoints: "id, eventId, createdAt",
+      localMeta: "key",
+    });
   }
 }
 export const db = new SeatingDB();

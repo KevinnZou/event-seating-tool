@@ -1,3 +1,4 @@
+import { layoutErrors } from "./geometry";
 import { Repository, repository } from "../db/repository";
 import {
   eventSchema,
@@ -162,6 +163,13 @@ export class SeatingService {
         throw new Error("桌号重复（01 与 1 视为同号）");
       if (occupancy(s, t.id) > t.capacity)
         throw new Error("容量不能小于已安排人数");
+      const geometry = layoutErrors({
+        ...s,
+        tables: old
+          ? s.tables.map((table) => (table.id === t.id ? t : table))
+          : [...s.tables, t],
+      });
+      if (geometry.length) throw new Error(geometry.join("；"));
       await this.repo.database.seatingTables.put(t);
       await this.touch(eventId);
     });
