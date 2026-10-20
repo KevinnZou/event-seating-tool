@@ -5,10 +5,10 @@ export const pointSchema = z.object({
 });
 export const areaSchema = pointSchema.extend({
   id: z.string().uuid(),
-  kind: z.enum(["stage", "entrance", "zone"]),
+  kind: z.enum(["stage", "entrance", "zone", "aisle"]),
   label: z.string().trim().min(1).max(60),
-  width: z.number().int().min(40).max(2000),
-  height: z.number().int().min(40).max(2000),
+  width: z.number().int().min(40).max(12000),
+  height: z.number().int().min(40).max(12000),
 });
 export const venueSchema = z
   .object({
@@ -32,6 +32,7 @@ export type Point = z.infer<typeof pointSchema>;
 export type Venue = z.infer<typeof venueSchema>;
 export type VenueArea = z.infer<typeof areaSchema>;
 export const areaLabels = {
+  aisle: "过道（禁放桌位）",
   stage: "舞台",
   entrance: "入口",
   zone: "自定义区域",

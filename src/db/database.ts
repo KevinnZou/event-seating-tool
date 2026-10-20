@@ -35,6 +35,14 @@ export class SeatingDB extends Dexie {
       checkpoints: "id, eventId, createdAt",
       localMeta: "key",
     });
+    // Gate older tabs that do not understand aisle exclusion zones.
+    this.version(4).stores({
+      events: "id, updatedAt",
+      guests: "id, eventId, tableId, [eventId+tableId]",
+      seatingTables: "id, eventId, [eventId+orderIndex]",
+      checkpoints: "id, eventId, createdAt",
+      localMeta: "key",
+    });
   }
 }
 export const db = new SeatingDB();

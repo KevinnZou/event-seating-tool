@@ -1,3 +1,4 @@
+import { findNewTablePosition } from "./layoutPlanner";
 import { layoutErrors } from "./geometry";
 import { Repository, repository } from "../db/repository";
 import {
@@ -167,6 +168,7 @@ export class SeatingService {
         throw new Error("桌号重复（01 与 1 视为同号）");
       if (occupancy(s, t.id) > t.capacity)
         throw new Error("容量不能小于已安排人数");
+      if (!old && s.event.venue) t.position = findNewTablePosition(s);
       const geometry = layoutErrors({
         ...s,
         tables: old

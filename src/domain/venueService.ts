@@ -1,11 +1,14 @@
+import { fingerprint } from "./snapshots";
 import { repository, type Repository } from "../db/repository";
 import { WorkspaceService } from "./workspaceService";
+import { materializeLayout } from "./geometry";
 import {
-  layoutOf,
-  materializeLayout,
-  TABLE_RADIUS,
-  defaultPosition,
-} from "./geometry";
+  planLayout,
+  defaultLayoutOptions,
+  intersectsArea,
+  AREA_CLEARANCE,
+  type LayoutOptions,
+} from "./layoutPlanner";
 import {
   areaSchema,
   pointSchema,
@@ -40,6 +43,13 @@ export class VenueService {
         const table = s.tables.find((t) => t.id === id);
         if (!table) throw new Error("桌位不属于当前活动");
         if (table.locked) throw new Error("请先解锁桌位");
+        if (
+          s.event.venue!.areas.some(
+            (a) =>
+              a.kind === "aisle" && intersectsArea(safe, a, AREA_CLEARANCE),
+          )
+        )
+          throw new Error("桌位不能放在过道或过道缓冲区，请移到过道外");
         table.position = safe;
       } else {
         const area = s.event.venue!.areas.find((a) => a.id === id);
@@ -70,34 +80,21 @@ export class VenueService {
       s.event.venue!.areas = s.event.venue!.areas.filter((a) => a.id !== id);
     });
   }
-  arrange(eventId: string) {
-    return this.mutate(eventId, (s) => {
-      const { venue } = layoutOf(s);
-      const placed = s.tables.filter((t) => t.locked).map((t) => t.position!);
-      let index = 0;
-      for (const table of s.tables.filter((t) => !t.locked)) {
-        let candidate: Point;
-        do {
-          candidate = defaultPosition(index++, venue.width);
-          if (candidate.y + TABLE_RADIUS > venue.height)
-            throw new Error("画布空间不足，请先扩大画布；未改变布局");
-        } while (
-          placed.some(
-            (p) =>
-              Math.hypot(p.x - candidate.x, p.y - candidate.y) <
-              2 * TABLE_RADIUS,
-          ) ||
-          venue.areas.some(
-            (a) =>
-              candidate.x + TABLE_RADIUS > a.x &&
-              candidate.x - TABLE_RADIUS < a.x + a.width &&
-              candidate.y + TABLE_RADIUS > a.y &&
-              candidate.y - TABLE_RADIUS < a.y + a.height,
-          )
-        );
-        table.position = candidate;
-        placed.push(candidate);
-      }
+  arrange(
+    eventId: string,
+    options: LayoutOptions = { ...defaultLayoutOptions, centralAisle: false },
+    expected?: string,
+  ) {
+    return this.repo.transaction(async () => {
+      const before = await this.repo.snapshot(eventId);
+      if (expected && fingerprint(before) !== expected)
+        throw new Error("预览后数据已变化，请重新打开整理预览");
+      const next = planLayout(
+        materializeLayout(before),
+        options,
+        crypto.randomUUID(),
+      );
+      await new WorkspaceService(this.repo).replace(next);
     });
   }
 }

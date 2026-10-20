@@ -210,7 +210,7 @@ it("V2备份含布局与命名方案，新活动恢复保引用；V1继续可读
     ),
   ).toThrow();
 });
-it("Dexie2升级3不丢旧活动、组和坐标，旧快照仍可读取", async () => {
+it("Dexie2升级4不丢旧活动、组和坐标，旧快照仍可读取", async () => {
   const name = crypto.randomUUID();
   const old = new Dexie(name);
   old.version(2).stores({
@@ -230,7 +230,7 @@ it("Dexie2升级3不丢旧活动、组和坐标，旧快照仍可读取", async 
   try {
     const actual = await new Repository(upgraded).snapshot(s.event.id);
     expect(fingerprint(parseSnapshot(actual))).toBe(fingerprint(s));
-    expect(upgraded.verno).toBe(3);
+    expect(upgraded.verno).toBe(4);
   } finally {
     await upgraded.delete();
   }
