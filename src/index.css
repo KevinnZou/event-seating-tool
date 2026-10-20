@@ -943,3 +943,18 @@ h3 {
     gap: 4px;
   }
 }
+
+.split-parts {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.split-part {
+  border-top: 1px solid var(--border);
+  padding: 16px 0;
+}
+.split-part h3 {
+  margin: 0;
+  font-size: 15px;
+}

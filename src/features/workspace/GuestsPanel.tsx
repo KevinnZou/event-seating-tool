@@ -145,7 +145,13 @@ export function GuestsPanel({
                     <div className="actions">
                       <button
                         className="link-button"
-                        disabled={busy || g.size < 2}
+                        disabled={
+                          busy ||
+                          g.size < 2 ||
+                          snapshot.tables.some(
+                            (t) => t.id === g.tableId && t.locked,
+                          )
+                        }
                         onClick={() => onSplit(g)}
                       >
                         拆分

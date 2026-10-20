@@ -327,3 +327,44 @@ test("桌位详情完整展示、移动、容量阻止、整桌迁出与撤销",
   await page.reload();
   await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
 });
+
+test("家庭拆成三组实时守恒、移除份额、刷新与撤销重做", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "试用虚构演示" }).click();
+  const row = page
+    .locator("tr")
+    .filter({ has: page.getByText("示例小禾一家", { exact: true }) });
+  await row.getByRole("button", { name: "拆分", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("status")).toContainText("已分配 4 / 4 人");
+  await dialog.getByRole("button", { name: "增加一组" }).click();
+  await expect(dialog.getByRole("status")).toContainText("超出 1 人");
+  await expect(dialog.getByRole("button", { name: "确认拆分" })).toBeDisabled();
+  await dialog.getByRole("button", { name: "移除第3组" }).click();
+  await expect(dialog.getByRole("status")).toContainText("人数合计一致");
+  await dialog.getByRole("button", { name: "增加一组" }).click();
+  await dialog.getByLabel("第2组人数").fill("2");
+  await dialog.getByLabel("第1组名称").fill("虚构三分甲");
+  await dialog.getByLabel("第2组名称").fill("虚构三分乙");
+  await dialog.getByLabel("第3组名称").fill("虚构三分丙");
+  await expect(dialog.getByRole("status")).toContainText("人数合计一致");
+  if (process.env.CAPTURE_QA)
+    await page.screenshot({
+      path: `docs/design/v01/split-${test.info().project.name}.png`,
+    });
+  await dialog.getByRole("button", { name: "确认拆分" }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByTestId("stat-计划出席")).toHaveText("11");
+  await expect(
+    page.getByRole("heading", { name: "宾客组（8）" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "撤销", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "宾客组（6）" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "重做", exact: true }).click();
+  await page.reload();
+  for (const name of ["虚构三分甲", "虚构三分乙", "虚构三分丙"])
+    await expect(page.getByText(name, { exact: true })).toBeVisible();
+  await expect(page.getByTestId("stat-计划出席")).toHaveText("11");
+});

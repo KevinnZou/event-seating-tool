@@ -1,3 +1,4 @@
+import { splitSizes } from "../domain/snapshots";
 import { describe, it, expect } from "vitest";
 import {
   nextOrderIndex,
@@ -101,4 +102,21 @@ it("奇偶判断不受超长数字桌号精度影响", () => {
   expect(tableParity("66")).toBe("even");
   expect(tableParity("A1")).toBe("custom");
   expect(tableParity("1234567890123456789012345678901234567891")).toBe("odd");
+});
+
+describe("拆分份额纯函数", () => {
+  it.each([
+    { total: 4, sizes: [1, 1, 2], expected: true },
+    { total: 4, sizes: [1, 1, 1, 1], expected: true },
+    { total: 4, sizes: [4], expected: false },
+    { total: 4, sizes: [0, 4], expected: false },
+    { total: 4, sizes: [-1, 5], expected: false },
+    { total: 4, sizes: [1.5, 2.5], expected: false },
+    { total: 4, sizes: [1, 2], expected: false },
+    { total: 4, sizes: [2, 3], expected: false },
+    { total: 4, sizes: [NaN, 4], expected: false },
+    { total: 4, sizes: [Infinity, 1], expected: false },
+  ])("$total 人拆为 $sizes → $expected", ({ total, sizes, expected }) => {
+    expect(splitSizes(total, sizes)).toBe(expected);
+  });
 });

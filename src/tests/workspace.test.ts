@@ -153,3 +153,52 @@ it("整桌迁出拒绝锁定、跨活动桌，空桌不产生额外变更", asyn
     "当前活动",
   );
 });
+
+it("一次拆成三组保留桌位、状态与来源，撤销重做保留全部ID", async () => {
+  const s = await repo.snapshot(id);
+  await svc.move(id, [s.guests[0].id], s.tables[0].id);
+  await history.execute(id, () =>
+    svc.split(id, s.guests[0].id, [
+      { name: "虚构拆分甲", size: 1 },
+      { name: "虚构拆分乙", size: 1 },
+      { name: "虚构拆分丙", size: 2 },
+    ]),
+  );
+  const after = await repo.snapshot(id);
+  const pieces = after.guests.filter((g) => g.tableId === s.tables[0].id);
+  expect(pieces.map((g) => g.size)).toEqual([1, 1, 2]);
+  expect(pieces.every((g) => g.attendance === "confirmed")).toBe(true);
+  expect(pieces.slice(1).every((g) => g.originGroupId === s.guests[0].id)).toBe(
+    true,
+  );
+  expect(calculateEventStats(after).totalRecordedCount).toBe(11);
+  await history.undo(id);
+  expect((await repo.snapshot(id)).guests).toHaveLength(2);
+  await history.redo(id);
+  expect((await repo.snapshot(id)).guests).toEqual(after.guests);
+});
+it("拆分拒绝零数、小数、少人、多人及空名称，不写入部分份额", async () => {
+  const s = await repo.snapshot(id);
+  for (const sizes of [
+    [0, 4],
+    [0.5, 3.5],
+    [1, 1, 1],
+    [1, 2, 2],
+  ]) {
+    await expect(
+      svc.split(
+        id,
+        s.guests[0].id,
+        sizes.map((size, i) => ({ name: `虚构${i}`, size })),
+      ),
+    ).rejects.toThrow();
+    expect(await repo.snapshot(id)).toEqual(s);
+  }
+  await expect(
+    svc.split(id, s.guests[0].id, [
+      { name: " ", size: 2 },
+      { name: "虚构乙", size: 2 },
+    ]),
+  ).rejects.toThrow();
+  expect(await repo.snapshot(id)).toEqual(s);
+});
