@@ -29,3 +29,13 @@ f6e7024 fix(storage): make snapshot replacement atomic for standalone callers
 ```
 
 随后补充锁定桌详情浏览器验收与拖放点击时序测试，再单独更新本README/验收文档。75项单元/集成、24项桌面/手机E2E及生产子路径检查通过；完整命令结果见ACCEPTANCE_V0.1.md。所有提交均保留在本地。
+
+## V0.1全计划开发收尾
+
+```text
+31205f3 feat(offline): support production restart, complete asset caching and confirmed updates
+8397808 feat(help): add private feedback drafts and reliable keyboard navigation
+8dd7515 feat(release): complete cross-browser checks and gated independent Pages workflow
+```
+
+本轮最终验收包为docs/REVIEW_READY.md，结果为81项单元/集成、84项跨引擎/设备E2E、6项生产子路径/离线/更新测试。每个功能提交前均完成lint/typecheck/tests/build及相关浏览器验证；新增依赖为零。之后另留文档收尾提交，所有提交在本地，没有远程推送或部署。

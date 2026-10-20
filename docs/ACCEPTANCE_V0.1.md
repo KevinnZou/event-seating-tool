@@ -1,5 +1,7 @@
 # V0.1 基础功能验收
 
+最新整体验收包与M0–M5状态见 [REVIEW_READY.md](REVIEW_READY.md)。本文件保留前期性能和打印证据，以下质量表更新为最终收尾结果。
+
 日期：2026-10-20。本次在M0/M1基础上完成M2排桌工作台、M3导入校验、M4交付备份与M5本地质量验证。没有远程推送、部署或公开发布；Safari和真实设备兼容测试仍待完成，不把此记录当作全部M5发布验收。
 
 ## 质量命令与结果
@@ -8,12 +10,12 @@
 | -------------------------------- | -------------------------------------------- |
 | npm run lint                     | 通过，0错误0警告                             |
 | npm run typecheck                | 通过，应用/单测/E2E/配置均strict             |
-| npm test                         | 8文件、75项单元/集成测试通过                 |
+| npm test                         | 10文件、81项单元/集成测试通过                |
 | npm run build                    | 通过，静态dist，所有运行时资源来自本站       |
-| npm run test:e2e                 | 24项通过：桌面12、手机仿真12                 |
-| npm run test:pages               | 1项通过，生产子路径及Hash深链接刷新          |
+| npm run test:e2e                 | 84项通过：六种引擎/设备配置×14项             |
+| npm run test:pages               | 6项通过，双引擎子路径/离线重开/确认更新      |
 | npm run format:check             | 通过                                         |
-| npm run privacy:check            | 通过，74个源码/静态产物文件及Git文件历史检查 |
+| npm run privacy:check            | 通过，83个源码/静态产物文件及Git文件历史检查 |
 | npm audit --audit-level=moderate | 0漏洞                                        |
 | git diff --check                 | 通过                                         |
 
@@ -112,3 +114,11 @@
 - 新增界面截图：docs/design/v01/table-details-{chromium,mobile}.png 与 split-{chromium,mobile}.png；已查看桌位详情手机和拆分桌面渲染，延续原设计系统。
 
 本轮没有变更数据库schema或扩大到V0.2算法/命名版本范围；旧项目未读取、未修改，无远程推送/部署。
+
+## V0.1整体收尾
+
+- 补齐生产版离线资源及确认更新，在关闭持久浏览器资料后，断网重开仍保留人数和桌位；首次访问导出页面也可离线生成Excel及JSON备份。资源缓存不含活动数据。
+- Chrome兼容引擎与Safari兼容WebKit分别执行桌面、手机、平板配置；总84项主流程通过。原有PDF与人数证据仍保留，WebKit检查打印CSS，不宣称它支持Chromium的page.pdf。
+- 增加帮助与隐私、仅本地生成的匿名反馈草稿、可键盘跳过导航和对话框初始/循环/恢复焦点；新增1000组/5000人完整性测试。
+- 独立仓库Pages工作流完成，默认不发布，用户验收后才能进入实际远程发布流程。工作流语法本地解析通过，远程CI、实际Safari/真机和公开URL仍未执行。
+- 整体验收步骤、准确范围与发布说明集中在REVIEW_READY.md和release/PUBLISH.md。
