@@ -6,6 +6,7 @@ import type {
   LocalCheckpoint,
 } from "../domain/models";
 export class SeatingDB extends Dexie {
+  localMeta!: EntityTable<{ key: string; value: string }, "key">;
   events!: EntityTable<EventEntity, "id">;
   guests!: EntityTable<GuestGroupEntity, "id">;
   seatingTables!: EntityTable<TableEntity, "id">;
@@ -17,6 +18,13 @@ export class SeatingDB extends Dexie {
       guests: "id, eventId, tableId, [eventId+tableId]",
       seatingTables: "id, eventId, [eventId+orderIndex]",
       checkpoints: "id, eventId, createdAt",
+    });
+    this.version(2).stores({
+      events: "id, updatedAt",
+      guests: "id, eventId, tableId, [eventId+tableId]",
+      seatingTables: "id, eventId, [eventId+orderIndex]",
+      checkpoints: "id, eventId, createdAt",
+      localMeta: "key",
     });
   }
 }

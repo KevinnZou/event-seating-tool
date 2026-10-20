@@ -24,7 +24,7 @@ export class Repository {
     const d = this.database;
     return d.transaction(
       "rw",
-      [d.events, d.guests, d.seatingTables, d.checkpoints],
+      [d.events, d.guests, d.seatingTables, d.checkpoints, d.localMeta],
       action,
     );
   }
