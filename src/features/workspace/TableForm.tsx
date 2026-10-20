@@ -1,3 +1,4 @@
+import { errorMessage } from "../../lib/errors";
 import { useState, type FormEvent } from "react";
 import { Modal } from "../../components/ui/Modal";
 import { seatingService } from "../../domain/services";
@@ -36,7 +37,7 @@ export function TableForm({
       );
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存失败");
+      setError(errorMessage(e, "保存失败"));
     } finally {
       setBusy(false);
     }

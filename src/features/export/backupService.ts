@@ -7,7 +7,7 @@ export class BackupService {
   constructor(repo = repository) {
     this.repo = repo;
   }
-  export(eventId?: string) {
+  export(eventId?: string, includeCheckpoints = true) {
     const d = this.repo.database;
     return d.transaction(
       "r",
@@ -30,9 +30,11 @@ export class BackupService {
           guestGroups: (await d.guests.toArray()).filter((g) =>
             ids.has(g.eventId),
           ),
-          checkpoints: (await d.checkpoints.toArray()).filter((cp) =>
-            ids.has(cp.eventId),
-          ),
+          checkpoints: includeCheckpoints
+            ? (await d.checkpoints.toArray()).filter((cp) =>
+                ids.has(cp.eventId),
+              )
+            : [],
         });
       },
     );

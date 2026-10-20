@@ -1,3 +1,4 @@
+import { errorMessage } from "../../lib/errors";
 import { BackupManager } from "../export/BackupManager";
 import { downloadBackup } from "../export/backupDownloads";
 import { ClearAllDialog } from "./ClearAllDialog";
@@ -29,9 +30,7 @@ export function Home() {
     try {
       await action();
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "保存失败，请检查浏览器存储权限",
-      );
+      setError(errorMessage(e, "保存失败，请检查浏览器存储权限"));
     } finally {
       setBusy(false);
     }

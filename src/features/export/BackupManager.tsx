@@ -1,3 +1,4 @@
+import { errorMessage } from "../../lib/errors";
 import { historyService } from "../../domain/historyService";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +22,7 @@ export function BackupManager({
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+  const [includeCheckpoints, setIncludeCheckpoints] = useState(true);
   const last = useLiveQuery(
     () => db.localMeta.get(eventId ? `backup:${eventId}` : "lastBackup"),
     [eventId],
@@ -31,7 +33,7 @@ export function BackupManager({
     try {
       await a();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "备份操作失败，未完成写入");
+      setError(errorMessage(e, "备份操作失败，未完成写入"));
     } finally {
       setBusy(false);
     }
@@ -47,13 +49,21 @@ export function BackupManager({
           {last ? new Date(last.value).toLocaleString("zh-CN") : "尚无"}
           （不代表浏览器已确认文件保存）
         </p>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={includeCheckpoints}
+            onChange={(e) => setIncludeCheckpoints(e.target.checked)}
+          />
+          下载时包含历史检查点（取消后仅备份全部当前数据，检查点仍留在本机）
+        </label>
         <div className="actions">
           <button
             className="primary"
             disabled={busy}
             onClick={() =>
               void run(async () => {
-                await downloadBackup(eventId);
+                await downloadBackup(eventId, includeCheckpoints);
                 setMessage("已触发完整备份下载，请核对下载文件。");
               })
             }
@@ -65,7 +75,7 @@ export function BackupManager({
               disabled={busy}
               onClick={() =>
                 void run(async () => {
-                  await downloadBackup();
+                  await downloadBackup(undefined, includeCheckpoints);
                   setMessage("已触发全部活动备份下载。");
                 })
               }

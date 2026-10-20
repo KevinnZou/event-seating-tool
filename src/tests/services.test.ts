@@ -188,3 +188,34 @@ it("无效输入不写库，复制完整性错误时不静默丢失引用", asyn
   await expect(service.copyEvent(a)).rejects.toThrow("完整性");
   expect(await db.events.count()).toBe(2);
 });
+
+it("schema1升级schema2保留已有活动、桌位和宾客", async () => {
+  const { default: Dexie } = await import("dexie");
+  const legacyName = `legacy-${crypto.randomUUID()}`,
+    legacy = new Dexie(legacyName);
+  legacy
+    .version(1)
+    .stores({
+      events: "id, updatedAt",
+      guests: "id, eventId, tableId, [eventId+tableId]",
+      seatingTables: "id, eventId, [eventId+orderIndex]",
+      checkpoints: "id, eventId, createdAt",
+    });
+  const s = await repo.snapshot(a);
+  await legacy.table("events").add(s.event);
+  await legacy.table("guests").bulkAdd(s.guests);
+  await legacy.table("seatingTables").bulkAdd(s.tables);
+  legacy.close();
+  const upgraded = new SeatingDB(legacyName);
+  try {
+    const restored = await new Repository(upgraded).snapshot(a);
+    expect(restored).toEqual(s);
+    await upgraded.localMeta.put({ key: "test", value: "ok" });
+    expect(await upgraded.localMeta.get("test")).toEqual({
+      key: "test",
+      value: "ok",
+    });
+  } finally {
+    await upgraded.delete();
+  }
+});

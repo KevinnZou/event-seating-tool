@@ -1,3 +1,4 @@
+import { errorMessage } from "../../lib/errors";
 import { useState } from "react";
 import {
   fields,
@@ -77,7 +78,7 @@ export function ImportSource({
               setSheet(0);
               setMapping(guessMapping(result[0].rows[0]));
             } catch (e) {
-              setError(e instanceof Error ? e.message : "文件读取失败");
+              setError(errorMessage(e, "文件读取失败"));
             } finally {
               setBusy(false);
               input.value = "";
@@ -158,7 +159,7 @@ export function ImportSource({
             if (!draft.length) throw new Error("没有可预览的记录");
             onPreview(draft);
           } catch (e) {
-            setError(e instanceof Error ? e.message : "解析失败");
+            setError(errorMessage(e, "解析失败"));
           }
         }}
       >

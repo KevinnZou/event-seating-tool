@@ -1,3 +1,4 @@
+import { errorMessage } from "../../lib/errors";
 import { useState, type FormEvent } from "react";
 import { Modal } from "../../components/ui/Modal";
 import { eventTypes, type EventInput } from "../../domain/models";
@@ -27,8 +28,10 @@ export function EventForm({
         Number(f.get("count") ?? 0),
       );
       onClose();
-    } catch {
-      setError("保存失败，请检查名称、人数范围或浏览器存储权限。");
+    } catch (e) {
+      setError(
+        errorMessage(e, "保存失败，请检查名称、人数范围或浏览器存储权限。"),
+      );
     } finally {
       setBusy(false);
     }

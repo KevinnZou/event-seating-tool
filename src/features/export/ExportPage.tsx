@@ -1,3 +1,4 @@
+import { errorMessage } from "../../lib/errors";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -45,7 +46,7 @@ export function ExportPage() {
     try {
       await a();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "导出失败，请重试");
+      setError(errorMessage(e, "导出失败，请重试"));
     } finally {
       setBusy(false);
     }

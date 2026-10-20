@@ -1,3 +1,4 @@
+import { errorMessage } from "../../lib/errors";
 import { BackupManager } from "../export/BackupManager";
 import { DataSafetyPanel } from "../export/DataSafetyPanel";
 import { usePeerWarning } from "../../app/usePeerWarning";
@@ -59,7 +60,7 @@ export function Workspace() {
       else await action();
       setMessage("变更已保存到本机");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存失败，请检查存储权限");
+      setError(errorMessage(e, "保存失败，请检查存储权限"));
     } finally {
       setBusy(false);
     }

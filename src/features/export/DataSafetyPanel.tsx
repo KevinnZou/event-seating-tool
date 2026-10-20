@@ -1,3 +1,4 @@
+import { errorMessage } from "../../lib/errors";
 import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../../db/database";
@@ -37,7 +38,7 @@ export function DataSafetyPanel({
       await a();
       if (success) setMessage(success);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "操作失败");
+      setError(errorMessage(e, "操作失败"));
     } finally {
       setBusy(false);
     }
@@ -114,6 +115,23 @@ export function DataSafetyPanel({
                   }}
                 >
                   恢复此检查点
+                </button>
+                <button
+                  className="link-button danger"
+                  disabled={busy}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "仅删除此历史检查点，当前名单不变。请先下载含检查点的备份。确认删除？",
+                      )
+                    )
+                      void run(
+                        () => checkpointService.delete(id, cp.id),
+                        "历史检查点已删除，当前名单不变",
+                      );
+                  }}
+                >
+                  删除检查点
                 </button>
               </li>
             ))}

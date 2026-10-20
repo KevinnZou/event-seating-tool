@@ -1,3 +1,4 @@
+import { errorMessage } from "../../lib/errors";
 import { useState } from "react";
 import { Modal } from "../../components/ui/Modal";
 import { backupService } from "../export/backupService";
@@ -19,7 +20,7 @@ export function ClearAllDialog({ onClose }: { onClose: () => void }) {
             historyService.reset();
             onClose();
           } catch (e) {
-            setError(e instanceof Error ? e.message : "清空失败");
+            setError(errorMessage(e, "清空失败"));
           } finally {
             setBusy(false);
           }
@@ -36,7 +37,7 @@ export function ClearAllDialog({ onClose }: { onClose: () => void }) {
             try {
               await downloadBackup();
             } catch (e) {
-              setError(e instanceof Error ? e.message : "下载失败");
+              setError(errorMessage(e, "下载失败"));
             } finally {
               setBusy(false);
             }

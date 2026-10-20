@@ -1,3 +1,4 @@
+import { errorMessage } from "../../lib/errors";
 import { useState } from "react";
 import { Modal } from "../../components/ui/Modal";
 import type { Snapshot } from "../../domain/models";
@@ -35,7 +36,7 @@ export function ImportWizard({
         stats = calculateEventStats(planned);
       summary = `导入后：${stats.groupCount} 组 / 录入 ${stats.totalRecordedCount} 人 / 计划 ${stats.plannedCount} 人 / 已排 ${stats.assignedCount} 人 / 未排 ${stats.unassignedCount} 人`;
     } catch (e) {
-      planError = e instanceof Error ? e.message : "预览失败";
+      planError = errorMessage(e, "预览失败");
     }
   }
   const duplicate = included.filter(
@@ -162,9 +163,7 @@ export function ImportWizard({
                         );
                         setStep(3);
                       } catch (e) {
-                        setError(
-                          e instanceof Error ? e.message : "导入失败，已回滚",
-                        );
+                        setError(errorMessage(e, "导入失败，已回滚"));
                       } finally {
                         setBusy(false);
                       }

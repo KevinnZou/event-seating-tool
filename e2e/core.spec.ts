@@ -28,7 +28,7 @@ test("M1 虚构数据完整流程、活动隔离、刷新与无拖拽移动", as
   ).toBe(true);
   if (process.env.CAPTURE_QA)
     await page.screenshot({
-      path: `docs/design/workspace-${testInfo.project.name}.png`,
+      path: `docs/design/v01/workspace-${testInfo.project.name}.png`,
       fullPage: true,
     });
   await page.getByRole("button", { name: "新增宾客组" }).click();
@@ -68,7 +68,7 @@ test("M1 虚构数据完整流程、活动隔离、刷新与无拖拽移动", as
   ).toBe(true);
   if (process.env.CAPTURE_QA)
     await page.screenshot({
-      path: `docs/design/home-${testInfo.project.name}.png`,
+      path: `docs/design/v01/home-${testInfo.project.name}.png`,
       fullPage: true,
     });
   expect(errors).toEqual([]);
@@ -90,4 +90,33 @@ test("存储不可用明确失败且不显示已保存", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("alert")).toContainText("存储");
   await expect(page.getByText("已保存到本机", { exact: true })).toHaveCount(0);
+});
+
+test("写入空间不足时明确提示且不生成半个活动", async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = IDBObjectStore.prototype.add;
+    IDBObjectStore.prototype.add = function (
+      this: IDBObjectStore,
+      value: unknown,
+      key?: IDBValidKey,
+    ) {
+      if (this.name === "events")
+        throw new DOMException("测试存储已满", "QuotaExceededError");
+      return key === undefined
+        ? original.call(this, value)
+        : original.call(this, value, key);
+    };
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "新建活动", exact: true }).click();
+  await page.getByLabel("活动名称").fill("虚构空间不足测试");
+  await page.getByRole("button", { name: "保存活动", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("存储空间不足");
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "从一场活动开始" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "虚构空间不足测试" }),
+  ).toHaveCount(0);
 });

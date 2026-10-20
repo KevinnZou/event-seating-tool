@@ -1,3 +1,4 @@
+import { errorMessage } from "../../lib/errors";
 import { useState } from "react";
 import { Modal } from "../../components/ui/Modal";
 import type { GuestGroupEntity } from "../../domain/models";
@@ -31,7 +32,7 @@ export function SplitForm({
             );
             onClose();
           } catch (e) {
-            setError(e instanceof Error ? e.message : "拆分失败");
+            setError(errorMessage(e, "拆分失败"));
           } finally {
             setBusy(false);
           }

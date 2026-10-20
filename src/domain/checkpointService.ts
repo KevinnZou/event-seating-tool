@@ -23,6 +23,14 @@ export class CheckpointService {
       return id;
     });
   }
+  delete(eventId: string, id: string) {
+    return this.repo.transaction(async () => {
+      const cp = await this.repo.database.checkpoints.get(id);
+      if (!cp || cp.eventId !== eventId)
+        throw new Error("检查点不属于当前活动");
+      await this.repo.database.checkpoints.delete(id);
+    });
+  }
   restore(eventId: string, id: string) {
     return this.repo.transaction(async () => {
       const checkpoint = await this.repo.database.checkpoints.get(id);

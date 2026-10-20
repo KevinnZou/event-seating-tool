@@ -154,3 +154,41 @@ it("拆分后的origin引用在新活动恢复后仍完整", async () => {
     restored.guestGroups.find((g) => !g.originGroupId)?.id,
   );
 });
+
+it("不含检查点的当前数据备份需显式选择，检查点仍保留", async () => {
+  const current = await backups.export(id, false);
+  expect(current.checkpoints).toHaveLength(0);
+  expect(current.guestGroups).toHaveLength(1);
+  expect(await db.checkpoints.count()).toBe(1);
+  const cp = (await db.checkpoints.toArray())[0];
+  await expect(
+    new CheckpointService(repo).delete(crypto.randomUUID(), cp.id),
+  ).rejects.toThrow();
+  await new CheckpointService(repo).delete(id, cp.id);
+  expect(await db.checkpoints.count()).toBe(0);
+  expect((await repo.snapshot(id)).guests).toHaveLength(1);
+});
+it("覆盖导入遇到另一个活动的ID冲突时完全回滚", async () => {
+  const b = await backups.export(id);
+  const other = await crud.createEvent(
+    { name: "虚构冲突活动", type: "banquet", defaultCapacity: 10 },
+    1,
+  );
+  const otherSnapshot = await repo.snapshot(other),
+    before = await repo.snapshot(id);
+  const old = b.tables[0].id,
+    target = otherSnapshot.tables[0].id;
+  const bad = {
+    ...b,
+    tables: b.tables.map((t) => (t.id === old ? { ...t, id: target } : t)),
+    guestGroups: b.guestGroups.map((g) => ({
+      ...g,
+      tableId: g.tableId === old ? target : g.tableId,
+    })),
+  };
+  await expect(
+    backups.restore(bad, "overwrite", "覆盖所选活动"),
+  ).rejects.toThrow("冲突");
+  expect(await repo.snapshot(id)).toEqual(before);
+  expect(await repo.snapshot(other)).toEqual(otherSnapshot);
+});
