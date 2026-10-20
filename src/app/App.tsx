@@ -1,3 +1,4 @@
+import { OfflineStatus } from "../offline/OfflineStatus";
 import { Suspense, lazy } from "react";
 import { HashRouter, Link, Route, Routes, useParams } from "react-router-dom";
 import { StorageGate } from "./StorageGate";
@@ -29,6 +30,7 @@ export default function App() {
           <Link to="/">本地活动</Link>
         </header>
         <main>
+          <OfflineStatus />
           <Suspense fallback={<p role="status">正在加载页面…</p>}>
             <Routes>
               <Route path="/events/:eventId" element={<WorkspaceRoute />} />

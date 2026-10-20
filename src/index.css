@@ -958,3 +958,47 @@ h3 {
   margin: 0;
   font-size: 15px;
 }
+
+.offline-status {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  color: #526b70;
+  font-size: 13px;
+}
+.offline-status p {
+  margin: 0 0 4px;
+}
+.offline-status small {
+  display: block;
+  margin-top: 4px;
+}
+.offline-status button {
+  margin: 8px 0;
+}
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  padding: 12px;
+  background: white;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+.skip-link:focus {
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+}
+@media print {
+  .offline-status,
+  .skip-link {
+    display: none !important;
+  }
+}
