@@ -120,3 +120,67 @@ test("写入空间不足时明确提示且不生成半个活动", async ({ page 
     page.getByRole("heading", { name: "虚构空间不足测试" }),
   ).toHaveCount(0);
 });
+
+test("键盘跳转、弹窗焦点约束与Escape返回入口", async ({
+  page,
+  browserName,
+}) => {
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: "从一场活动开始" }),
+  ).toBeVisible();
+  // Safari uses Option+Tab to include links when full keyboard access is off.
+  await page.keyboard.press(browserName === "webkit" ? "Alt+Tab" : "Tab");
+  await expect(page.getByRole("link", { name: "跳到主要内容" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#main-content")).toBeFocused();
+  const open = page.getByRole("button", { name: "新建活动", exact: true });
+  await open.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByLabel("活动名称")).toBeFocused();
+  // Shift+Tab from the first form field reaches the dialog close button, then wraps within it.
+  await page.keyboard.press(
+    browserName === "webkit" ? "Alt+Shift+Tab" : "Shift+Tab",
+  );
+  await expect(
+    page.getByRole("button", { name: "关闭", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press(
+    browserName === "webkit" ? "Alt+Shift+Tab" : "Shift+Tab",
+  );
+  await expect(
+    page.getByRole("button", { name: "保存活动", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await expect(open).toBeFocused();
+});
+
+test("帮助页隐私说明与匿名草稿不自动附加名单", async ({ page }, testInfo) => {
+  const { readFile } = await import("node:fs/promises");
+  await page.goto("/");
+  await page.getByRole("link", { name: "帮助与隐私", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "使用帮助与隐私" }),
+  ).toBeVisible();
+  await page.getByLabel("问题或建议").fill("虚构反馈：希望菜单更清楚");
+  await page.getByLabel("我已确认不含真实名单、联系方式或其他私人信息").check();
+  const pending = page.waitForEvent("download");
+  await page.getByRole("button", { name: "下载匿名反馈草稿" }).click();
+  const file = testInfo.outputPath("fictional-feedback.txt");
+  await (await pending).saveAs(file);
+  const content = await readFile(file, "utf8");
+  expect(content).toContain("希望菜单更清楚");
+  expect(content).not.toContain("示例小禾一家");
+  await expect(page.getByRole("status")).toContainText("未向任何人发送");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  if (process.env.CAPTURE_QA)
+    await page.screenshot({
+      path: `docs/design/v01/help-${testInfo.project.name}.png`,
+      fullPage: true,
+    });
+});
