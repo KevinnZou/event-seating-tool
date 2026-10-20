@@ -18,6 +18,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - run: npm run test:pages
+      - run: npm run privacy:check
       - uses: actions/upload-artifact@v4
         with:
           name: github-pages-ready-dist

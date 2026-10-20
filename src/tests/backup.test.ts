@@ -192,3 +192,23 @@ it("覆盖导入遇到另一个活动的ID冲突时完全回滚", async () => {
   expect(await repo.snapshot(id)).toEqual(before);
   expect(await repo.snapshot(other)).toEqual(otherSnapshot);
 });
+
+it("导入写入中途失败会恢复原名单、桌位和检查点", async () => {
+  const before = await repo.snapshot(id),
+    count = await db.checkpoints.count();
+  db.guests.hook("creating", (_key, g) => {
+    if (g.displayName === "虚构失败组") throw new Error("模拟导入写入失败");
+  });
+  await expect(
+    new ImportService(repo).commit(
+      id,
+      parseText("虚构失败组(2)"),
+      "append",
+      false,
+      fingerprint(before),
+      "",
+    ),
+  ).rejects.toThrow("模拟导入写入失败");
+  expect(await repo.snapshot(id)).toEqual(before);
+  expect(await db.checkpoints.count()).toBe(count);
+});

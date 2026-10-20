@@ -1,0 +1,30 @@
+[
+  {
+    "people": 300,
+    "tables": 30,
+    "importedMs": 387,
+    "searchMs": 34,
+    "project": "桌面"
+  },
+  {
+    "people": 300,
+    "tables": 30,
+    "importedMs": 387,
+    "searchMs": 33,
+    "project": "手机仿真"
+  },
+  {
+    "people": 500,
+    "tables": 50,
+    "importedMs": 371,
+    "searchMs": 54,
+    "project": "桌面"
+  },
+  {
+    "people": 500,
+    "tables": 50,
+    "importedMs": 326,
+    "searchMs": 47,
+    "project": "手机仿真"
+  }
+]

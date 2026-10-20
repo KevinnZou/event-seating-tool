@@ -1,6 +1,7 @@
 import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
+  outputDir: "test-results/pages",
   testMatch: "pages.spec.ts",
   use: {
     baseURL: "http://127.0.0.1:4175/event-seating-tool/",

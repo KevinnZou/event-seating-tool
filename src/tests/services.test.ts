@@ -193,14 +193,12 @@ it("schema1升级schema2保留已有活动、桌位和宾客", async () => {
   const { default: Dexie } = await import("dexie");
   const legacyName = `legacy-${crypto.randomUUID()}`,
     legacy = new Dexie(legacyName);
-  legacy
-    .version(1)
-    .stores({
-      events: "id, updatedAt",
-      guests: "id, eventId, tableId, [eventId+tableId]",
-      seatingTables: "id, eventId, [eventId+orderIndex]",
-      checkpoints: "id, eventId, createdAt",
-    });
+  legacy.version(1).stores({
+    events: "id, updatedAt",
+    guests: "id, eventId, tableId, [eventId+tableId]",
+    seatingTables: "id, eventId, [eventId+orderIndex]",
+    checkpoints: "id, eventId, createdAt",
+  });
   const s = await repo.snapshot(a);
   await legacy.table("events").add(s.event);
   await legacy.table("guests").bulkAdd(s.guests);

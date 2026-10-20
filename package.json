@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:pages": "npm run build && playwright test --config playwright.pages.config.ts"
+    "test:pages": "npm run build && playwright test --config playwright.pages.config.ts",
+    "privacy:check": "node scripts/privacy-check.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

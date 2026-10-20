@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
+  outputDir: "test-results/browser",
   testMatch: ["core.spec.ts", "workflow.spec.ts"],
   fullyParallel: false,
   use: {
