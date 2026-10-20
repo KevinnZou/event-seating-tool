@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   nextOrderIndex,
+  tableParity,
   assertCapacity,
   calculateEventStats,
   normalizeTableLabel,
@@ -93,4 +94,11 @@ describe("统计与不变量", () => {
 it("删除后新增序号仍追加且不重排", () => {
   expect(nextOrderIndex([])).toBe(0);
   expect(nextOrderIndex([{ orderIndex: 0 }, { orderIndex: 5 }])).toBe(6);
+});
+
+it("奇偶判断不受超长数字桌号精度影响", () => {
+  expect(tableParity("01")).toBe("odd");
+  expect(tableParity("66")).toBe("even");
+  expect(tableParity("A1")).toBe("custom");
+  expect(tableParity("1234567890123456789012345678901234567891")).toBe("odd");
 });

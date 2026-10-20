@@ -129,3 +129,9 @@ export function assertCapacity(
 export function nextOrderIndex(items: { orderIndex: number }[]) {
   return items.reduce((max, item) => Math.max(max, item.orderIndex), -1) + 1;
 }
+
+export function tableParity(label: string): "odd" | "even" | "custom" {
+  const value = label.trim();
+  if (!/^\d+$/.test(value)) return "custom";
+  return Number(value.at(-1)) % 2 === 0 ? "even" : "odd";
+}

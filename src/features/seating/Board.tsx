@@ -13,7 +13,7 @@ import type {
   GuestGroupEntity,
   TableEntity,
 } from "../../domain/models";
-import { occupancy } from "../../domain/calculations";
+import { occupancy, tableParity } from "../../domain/calculations";
 import { workspaceService } from "../../domain/workspaceService";
 import { filterGuests, type Filters } from "./selectors";
 function Group({
@@ -190,8 +190,8 @@ export function Board({
             .filter(
               (t) =>
                 !parity ||
-                !/^\d+$/.test(t.label) ||
-                Number(t.label) % 2 === (parity === "odd" ? 1 : 0),
+                tableParity(t.label) === "custom" ||
+                tableParity(t.label) === parity,
             )
             .map((t) => (
               <Zone

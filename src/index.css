@@ -853,3 +853,32 @@ tr:focus {
     print-color-adjust: exact;
   }
 }
+input,
+select,
+textarea {
+  min-width: 0;
+}
+h1,
+h2,
+h3 {
+  overflow-wrap: anywhere;
+}
+.page-heading > div,
+.section-heading > div {
+  min-width: 0;
+}
+.drag-handle strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.drag-handle span {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.filterbar > label {
+  min-width: 0;
+}
+.clear-filters {
+  justify-self: start;
+  align-self: end;
+}

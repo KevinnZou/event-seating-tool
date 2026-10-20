@@ -1,6 +1,10 @@
 import type { Snapshot } from "../../domain/models";
 import { attendanceLabels } from "../../domain/models";
-import { occupancy, calculateEventStats } from "../../domain/calculations";
+import {
+  occupancy,
+  calculateEventStats,
+  tableParity,
+} from "../../domain/calculations";
 export function PrintableReport({
   snapshot: s,
   parity,
@@ -15,19 +19,15 @@ export function PrintableReport({
     ? [
         {
           name: "奇数桌",
-          tables: s.tables.filter(
-            (t) => /^\d+$/.test(t.label) && Number(t.label) % 2 === 1,
-          ),
+          tables: s.tables.filter((t) => tableParity(t.label) === "odd"),
         },
         {
           name: "偶数桌",
-          tables: s.tables.filter(
-            (t) => /^\d+$/.test(t.label) && Number(t.label) % 2 === 0,
-          ),
+          tables: s.tables.filter((t) => tableParity(t.label) === "even"),
         },
         {
           name: "自定义桌",
-          tables: s.tables.filter((t) => !/^\d+$/.test(t.label)),
+          tables: s.tables.filter((t) => tableParity(t.label) === "custom"),
         },
       ]
     : [{ name: "桌位安排", tables: s.tables }];
@@ -54,7 +54,11 @@ export function PrintableReport({
           <h2>{section.name}</h2>
           <div
             className={
-              cards ? "print-card-grid" : parity ? "print-parity-list" : ""
+              cards
+                ? "print-card-grid"
+                : parity && section.name !== "自定义桌"
+                  ? "print-parity-list"
+                  : ""
             }
           >
             {section.tables.map((t) => (

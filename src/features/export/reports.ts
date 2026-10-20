@@ -1,7 +1,11 @@
 import Papa from "papaparse";
 import type { Snapshot } from "../../domain/models";
 import { attendanceLabels } from "../../domain/models";
-import { occupancy, calculateEventStats } from "../../domain/calculations";
+import {
+  occupancy,
+  calculateEventStats,
+  tableParity,
+} from "../../domain/calculations";
 export function escapeSpreadsheetCell(value: string) {
   const first = [...value].find((c) => c.charCodeAt(0) > 32 && !/\s/.test(c));
   return first && "=+-@".includes(first) ? `'${value}` : value;
@@ -73,19 +77,11 @@ export function textReport(s: Snapshot, parity = false) {
   if (parity) {
     lines.push(
       "【奇数桌】",
-      ...tableLines(
-        s.tables.filter(
-          (t) => /^\d+$/.test(t.label) && Number(t.label) % 2 === 1,
-        ),
-      ),
+      ...tableLines(s.tables.filter((t) => tableParity(t.label) === "odd")),
       "【偶数桌】",
-      ...tableLines(
-        s.tables.filter(
-          (t) => /^\d+$/.test(t.label) && Number(t.label) % 2 === 0,
-        ),
-      ),
+      ...tableLines(s.tables.filter((t) => tableParity(t.label) === "even")),
       "【自定义桌】",
-      ...tableLines(s.tables.filter((t) => !/^\d+$/.test(t.label))),
+      ...tableLines(s.tables.filter((t) => tableParity(t.label) === "custom")),
     );
   } else lines.push(...tableLines(s.tables));
   lines.push(

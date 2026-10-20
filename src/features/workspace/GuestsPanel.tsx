@@ -35,6 +35,10 @@ export function GuestsPanel({
           新增宾客组
         </button>
       </div>
+      {snapshot.guests.length > 0 &&
+        filterGuests(snapshot, filters).length === 0 && (
+          <p className="notice">没有符合筛选的宾客，请调整或清除筛选。</p>
+        )}
       {snapshot.guests.length === 0 ? (
         <p className="muted">
           暂无宾客。添加一人、家庭或团队，按整组安排桌位。

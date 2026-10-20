@@ -1,5 +1,6 @@
 import type { Snapshot } from "../../domain/models";
 import { attendanceLabels } from "../../domain/models";
+import { initialFilters } from "./selectors";
 import type { Filters } from "./selectors";
 export function GuestFilters({
   snapshot,
@@ -77,6 +78,13 @@ export function GuestFilters({
           <option value="table">桌号自然排序</option>
         </select>
       </label>
+      <button
+        className="clear-filters"
+        type="button"
+        onClick={() => onChange(initialFilters)}
+      >
+        清除筛选
+      </button>
     </div>
   );
 }
