@@ -59,7 +59,10 @@ test("导入纠错、同名保留、搜索、批量移桌与撤销重做", async
   ).toBe(true);
 });
 
-test("完整备份下载、清空、恢复、报表与打印预览", async ({ page }, testInfo) => {
+test("完整备份下载、清空、恢复、报表与打印预览", async ({
+  page,
+  browserName,
+}, testInfo) => {
   const { readFile } = await import("node:fs/promises");
   page.on("dialog", (d) => d.accept());
   await page.goto("/");
@@ -130,11 +133,12 @@ test("完整备份下载、清空、恢复、报表与打印预览", async ({ pa
     path: testInfo.outputPath("print-preview.png"),
     fullPage: true,
   });
-  await page.pdf({
-    path: testInfo.outputPath("fictional-seating.pdf"),
-    format: "A4",
-    preferCSSPageSize: true,
-  });
+  if (browserName === "chromium")
+    await page.pdf({
+      path: testInfo.outputPath("fictional-seating.pdf"),
+      format: "A4",
+      preferCSSPageSize: true,
+    });
   await page.emulateMedia({ media: "screen" });
 });
 
@@ -214,7 +218,7 @@ test("桌卡整组移动：桌面拖放与手机菜单", async ({ page }, testIn
   await page.goto("/");
   await page.getByRole("button", { name: "试用虚构演示" }).click();
   await page.getByRole("button", { name: "排桌工作台", exact: true }).click();
-  if (testInfo.project.name === "mobile") {
+  if (testInfo.project.use.isMobile) {
     await page
       .getByLabel("工作台安排 示例小禾一家")
       .selectOption({ label: "03 桌" });

@@ -31,3 +31,31 @@ it.each([300, 500])("%s人数据完整规划与搜索在合理预算内", (peopl
   ).toHaveLength(1);
   expect(performance.now() - start).toBeLessThan(3000);
 });
+
+it("支持1000个独立组、5000人，不因同名或最大桌号改变数量", () => {
+  const seed = fixture();
+  const text = Array.from(
+    { length: 100 },
+    (_, table) =>
+      `${String(table + 1).padStart(2, "0")}号桌：${Array.from({ length: 10 }, (_, group) => `虚构大型同名${group % 5}(5)`).join("、")}`,
+  ).join("\n");
+  const planned = planImport(
+    {
+      ...seed,
+      event: { ...seed.event, defaultCapacity: 50 },
+      tables: [],
+      guests: [],
+    },
+    parseText(text),
+    "append",
+    true,
+  );
+  expect(planned.guests).toHaveLength(1000);
+  expect(new Set(planned.guests.map((guest) => guest.id)).size).toBe(1000);
+  expect(calculateEventStats(planned)).toMatchObject({
+    totalRecordedCount: 5000,
+    plannedCount: 5000,
+    assignedCount: 5000,
+    tableCount: 100,
+  });
+});

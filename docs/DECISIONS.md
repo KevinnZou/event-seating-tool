@@ -176,3 +176,9 @@
 - 无后端约束下，匿名反馈只生成用户手填的本地草稿。需勾选无私人信息确认，不自动附加活动/名单/URL/设备ID/日志，不自动发送。公开发布后用户自行决定分享，当前没有远程反馈收集端点。
 - 键盘实测发现React autoFocus早于dialog.showModal，首次焦点未落在表单；现由Modal打开后显式聚焦首个可用输入。记录打开前焦点，关闭返回入口，首尾Tab显式循环，标题使用独立useId。Safari未启用全键盘访问时，按Option+Tab遍历链接和按钮。
 - Chromium与WebKit均执行原有完整业务流程，移动/平板走菜单，桌面保留真实pointer拖放；PDF文件生成限Chromium，WebKit同样校验打印CSS视图，不能冒称WebKit支持page.pdf。
+
+## 发布工作流与范围
+
+- 补齐GitHub Pages工作流，但当前不关联/推送远程，也不执行发布。仅允许新独立event-seating-tool仓库默认分支、手动确认后发布；后续自动发布需在新仓库显式启用ENABLE_PAGES_DEPLOY变量。部署前复用全部CI检查，部署任务才获得Pages写权限。
+- 增加六种引擎/设备仿真配置（Chromium桌面/iPhone尺寸/Pixel，WebKit桌面/iPhone/iPad），失败保留截图与trace。它们不等于实际Safari应用或物理手机测试；此项和生产URL验收留在用户整体验收/发布门槛中明确记录。
+- V0.1只规划、不实现的V0.2+模块仍保持边界。整体验收之后再决定后续版本，不自动增加云服务、AI、礼金/伴手礼或逐席分座。

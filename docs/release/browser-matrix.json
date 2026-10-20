@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-20",
+  "note": "本机Playwright引擎与设备仿真；含自动化交互与等待，不等于真机性能承诺。",
+  "measurements": [
+    {
+      "people": 300,
+      "tables": 30,
+      "importedMs": 455,
+      "searchMs": 41,
+      "configuration": "android"
+    },
+    {
+      "people": 300,
+      "tables": 30,
+      "importedMs": 329,
+      "searchMs": 46,
+      "configuration": "chromium"
+    },
+    {
+      "people": 300,
+      "tables": 30,
+      "importedMs": 357,
+      "searchMs": 37,
+      "configuration": "ios-webkit"
+    },
+    {
+      "people": 300,
+      "tables": 30,
+      "importedMs": 369,
+      "searchMs": 42,
+      "configuration": "mobile"
+    },
+    {
+      "people": 300,
+      "tables": 30,
+      "importedMs": 437,
+      "searchMs": 40,
+      "configuration": "tablet-webkit"
+    },
+    {
+      "people": 300,
+      "tables": 30,
+      "importedMs": 467,
+      "searchMs": 50,
+      "configuration": "webkit"
+    },
+    {
+      "people": 500,
+      "tables": 50,
+      "importedMs": 415,
+      "searchMs": 61,
+      "configuration": "android"
+    },
+    {
+      "people": 500,
+      "tables": 50,
+      "importedMs": 379,
+      "searchMs": 61,
+      "configuration": "chromium"
+    },
+    {
+      "people": 500,
+      "tables": 50,
+      "importedMs": 551,
+      "searchMs": 278,
+      "configuration": "ios-webkit"
+    },
+    {
+      "people": 500,
+      "tables": 50,
+      "importedMs": 430,
+      "searchMs": 63,
+      "configuration": "mobile"
+    },
+    {
+      "people": 500,
+      "tables": 50,
+      "importedMs": 439,
+      "searchMs": 59,
+      "configuration": "tablet-webkit"
+    },
+    {
+      "people": 500,
+      "tables": 50,
+      "importedMs": 451,
+      "searchMs": 76,
+      "configuration": "webkit"
+    }
+  ]
+}
