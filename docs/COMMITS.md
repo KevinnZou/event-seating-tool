@@ -19,3 +19,13 @@ b3e2ce2 perf(ui): paginate guest lists and streamline dense import previews
 ```
 
 其后以单独的验收/文档提交收尾。可用 `git log --oneline`、`git show <提交号>` 复查。
+
+## 桌位与拆分续完善
+
+```text
+fbaaac6 feat(seating): add complete table details and reversible whole-table release
+430497b feat(seating): support explicit multi-part splitting with live count validation
+f6e7024 fix(storage): make snapshot replacement atomic for standalone callers
+```
+
+随后补充锁定桌详情浏览器验收与拖放点击时序测试，再单独更新本README/验收文档。75项单元/集成、24项桌面/手机E2E及生产子路径检查通过；完整命令结果见ACCEPTANCE_V0.1.md。所有提交均保留在本地。
