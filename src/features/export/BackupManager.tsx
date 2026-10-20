@@ -55,7 +55,7 @@ export function BackupManager({
             checked={includeCheckpoints}
             onChange={(e) => setIncludeCheckpoints(e.target.checked)}
           />
-          下载时包含历史检查点（取消后仅备份全部当前数据，检查点仍留在本机）
+          下载时包含历史检查点与命名方案（取消后仅备份全部当前数据，检查点仍留在本机）
         </label>
         <div className="actions">
           <button

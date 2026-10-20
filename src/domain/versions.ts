@@ -1,5 +1,6 @@
+import { layoutOf } from "./geometry";
 import { z } from "zod";
-import type { Snapshot } from "./models";
+import { attendanceLabels, type Snapshot } from "./models";
 import { parseSnapshot } from "./snapshots";
 import { repository, type Repository } from "../db/repository";
 import { CheckpointService } from "./checkpointService";
@@ -23,6 +24,8 @@ export function compareSnapshots(
   if (before.event.id !== after.event.id)
     throw new Error("只能比较同一活动的方案");
   const changes: VersionChange[] = [];
+  const beforeLayout = layoutOf(before),
+    afterLayout = layoutOf(after);
   const add = (kind: string, label: string, a: unknown, b: unknown) =>
     changes.push({ kind, label, before: display(a), after: display(b) });
   const tableName = (s: Snapshot, id: string | null) =>
@@ -73,13 +76,10 @@ export function compareSnapshots(
     ] as const)
       if (table[key] !== next[key])
         add(label, table.label, table[key], next[key]);
-    if (JSON.stringify(table.position) !== JSON.stringify(next.position))
-      add(
-        "桌位置",
-        next.label,
-        JSON.stringify(table.position),
-        JSON.stringify(next.position),
-      );
+    const a = beforeLayout.tables.find((t) => t.id === table.id)!.position;
+    const b = afterLayout.tables.find((t) => t.id === table.id)!.position;
+    if (a.x !== b.x || a.y !== b.y)
+      add("桌位置", next.label, `${a.x}, ${a.y}`, `${b.x}, ${b.y}`);
   }
   for (const table of after.tables)
     if (!before.tables.some((t) => t.id === table.id))
@@ -93,14 +93,36 @@ export function compareSnapshots(
   ] as const)
     if (before.event[key] !== after.event[key])
       add(label, "活动设置", before.event[key], after.event[key]);
-  if (JSON.stringify(before.event.venue) !== JSON.stringify(after.event.venue))
-    add(
-      "场地区域",
-      "画布与区域",
-      JSON.stringify(before.event.venue),
-      JSON.stringify(after.event.venue),
-    );
-  return changes;
+  for (const [key, label] of [
+    ["width", "画布宽度"],
+    ["height", "画布高度"],
+  ] as const)
+    if (beforeLayout.venue[key] !== afterLayout.venue[key])
+      add(label, "场地", beforeLayout.venue[key], afterLayout.venue[key]);
+  const areaInfo = (area: (typeof beforeLayout.venue.areas)[number]) =>
+    `${area.label} · 位置 ${area.x}, ${area.y} · ${area.width}×${area.height}`;
+  for (const area of beforeLayout.venue.areas) {
+    const next = afterLayout.venue.areas.find((a) => a.id === area.id);
+    if (!next) add("删除区域", area.label, areaInfo(area), "已删除");
+    else if (JSON.stringify(area) !== JSON.stringify(next))
+      add("区域变化", next.label, areaInfo(area), areaInfo(next));
+  }
+  for (const area of afterLayout.venue.areas)
+    if (!beforeLayout.venue.areas.some((a) => a.id === area.id))
+      add("新增区域", area.label, "不存在", areaInfo(area));
+  return changes.map((change) =>
+    change.kind === "出席"
+      ? {
+          ...change,
+          before:
+            attendanceLabels[change.before as keyof typeof attendanceLabels] ??
+            change.before,
+          after:
+            attendanceLabels[change.after as keyof typeof attendanceLabels] ??
+            change.after,
+        }
+      : change,
+  );
 }
 export class VersionService {
   readonly repo: Repository;
@@ -122,6 +144,10 @@ export class VersionService {
       if (!cp || cp.eventId !== eventId || !cp.name)
         throw new Error("方案不属于当前活动");
       await this.repo.database.checkpoints.update(id, { name: safe });
+      await this.repo.database.localMeta.put({
+        key: `historyDirty:${eventId}`,
+        value: new Date().toISOString(),
+      });
     });
   }
   restore(eventId: string, id: string) {

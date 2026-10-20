@@ -245,3 +245,71 @@ it("SVG文本转义、不包含名单，PNG输出有严格像素预算", async (
   }
   expect(() => pngDimensions(NaN, 20)).toThrow();
 });
+
+it("方案重命名和删除也标记备份未覆盖，当前数据备份不能冒称包含历史", async () => {
+  const b = new BackupService(repo);
+  const version = await versions.save(id, "虚构备份版本");
+  await b.markDownloaded(await b.export(id));
+  expect(await db.localMeta.get(`historyDirty:${id}`)).toBeUndefined();
+  await versions.rename(id, version, "虚构重命名");
+  expect(await db.localMeta.get(`historyDirty:${id}`)).toBeDefined();
+  await b.markDownloaded(await b.export(id, false));
+  expect(await db.localMeta.get(`historyDirty:${id}`)).toBeDefined();
+  await b.markDownloaded(await b.export(id));
+  expect(await db.localMeta.get(`historyDirty:${id}`)).toBeUndefined();
+  await versions.delete(id, version);
+  expect(await db.localMeta.get(`historyDirty:${id}`)).toBeDefined();
+});
+
+it.each([300, 500])("%s人规则预览、应用计算与场地导出守恒", async (people) => {
+  const { planSvg } = await import("../features/floorplan/planExport");
+  const seed = fixture(),
+    count = people - 3,
+    start = performance.now();
+  const s = {
+    ...seed,
+    guests: Array.from({ length: count }, (_, i) => ({
+      ...seed.guests[0],
+      id: crypto.randomUUID(),
+      displayName: `虚构规则${i}`,
+      size: i === 0 ? 4 : 1,
+      tableId: null,
+      attendance: "confirmed" as const,
+      orderIndex: i,
+    })),
+    tables: Array.from({ length: people / 10 }, (_, i) => ({
+      ...seed.tables[0],
+      id: crypto.randomUUID(),
+      label: String(i + 1),
+      capacity: 10,
+      orderIndex: i,
+    })),
+  };
+  const p = suggestSeating(s, { rule: "category", includeTentative: true });
+  const after = applyProposal(s, p);
+  expect(calculateEventStats(after)).toMatchObject({
+    plannedCount: people,
+    assignedCount: people,
+    unassignedCount: 0,
+  });
+  expect(planSvg(after).svg).toContain(`计划 ${people} 人`);
+  expect(performance.now() - start).toBeLessThan(3000);
+});
+
+it("CRUD输入不可夹带位置/场地字段绕过锁定与布局校验", async () => {
+  const s = await repo.snapshot(id);
+  await venue.position(id, "table", s.tables[0].id, { x: 400, y: 400 });
+  const table = (await repo.snapshot(id)).tables[0];
+  await crud.saveTable(id, { ...table, locked: true }, table.id);
+  const injected = { ...table, locked: true, position: { x: 1, y: 1 } };
+  await crud.saveTable(id, injected, table.id);
+  expect((await repo.snapshot(id)).tables[0].position).toEqual({
+    x: 400,
+    y: 400,
+  });
+  await crud.updateEvent(id, {
+    ...s.event,
+    venue: { width: 400, height: 400, areas: [] },
+  } as typeof s.event);
+  expect((await repo.snapshot(id)).event.venue!.width).toBe(1200);
+});

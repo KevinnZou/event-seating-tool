@@ -2,6 +2,9 @@ import { layoutErrors } from "./geometry";
 import { Repository, repository } from "../db/repository";
 import {
   eventSchema,
+  eventInputSchema,
+  guestInputSchema,
+  tableInputSchema,
   guestSchema,
   tableSchema,
   type EventInput,
@@ -33,7 +36,7 @@ export class SeatingService {
     )
       throw new Error("初始桌数须为 0–100");
     const event = eventSchema.parse({
-      ...input,
+      ...eventInputSchema.parse(input),
       date: input.date || undefined,
       id: uuid(),
       createdAt: now(),
@@ -65,7 +68,7 @@ export class SeatingService {
       await this.repo.database.events.put(
         eventSchema.parse({
           ...s.event,
-          ...input,
+          ...eventInputSchema.parse(input),
           date: input.date || undefined,
           updatedAt: now(),
         }),
@@ -129,6 +132,7 @@ export class SeatingService {
       await d.seatingTables.where("eventId").equals(eventId).delete();
       await d.checkpoints.where("eventId").equals(eventId).delete();
       await d.localMeta.delete(`backup:${eventId}`);
+      await d.localMeta.delete(`historyDirty:${eventId}`);
       await d.events.delete(eventId);
     });
   }
@@ -146,7 +150,7 @@ export class SeatingService {
         throw new Error("请先解锁桌位");
       const t = tableSchema.parse({
         ...old,
-        ...input,
+        ...tableInputSchema.parse(input),
         id: old?.id ?? uuid(),
         eventId,
         orderIndex: old?.orderIndex ?? nextOrderIndex(s.tables),
@@ -190,7 +194,7 @@ export class SeatingService {
         throw new Error("需确认将宾客迁回未安排区");
       const g = guestSchema.parse({
         ...old,
-        ...input,
+        ...guestInputSchema.parse(input),
         id: old?.id ?? uuid(),
         eventId,
         tableId:

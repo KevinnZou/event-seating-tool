@@ -1,3 +1,5 @@
+import { SuggestionDialog } from "../seating/SuggestionDialog";
+import { VersionDialog } from "../versions/VersionDialog";
 import { FloorPlan } from "../floorplan/FloorPlan";
 import { TableDetails } from "./TableDetails";
 import { errorMessage } from "../../lib/errors";
@@ -34,6 +36,8 @@ export function Workspace() {
   const { eventId = "" } = useParams();
   const location = useLocation();
   const peerWarning = usePeerWarning(eventId);
+  const [suggesting, setSuggesting] = useState(false),
+    [versioning, setVersioning] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [backingUp, setBackingUp] = useState(false);
   const result = useLiveQuery(async () => {
@@ -101,6 +105,8 @@ export function Workspace() {
           <Link className="button" to={`/events/${eventId}/export`}>
             导出交付
           </Link>
+          <button onClick={() => setSuggesting(true)}>规则排桌建议</button>
+          <button onClick={() => setVersioning(true)}>命名方案与差异</button>
           <button onClick={() => setEdit(true)}>编辑活动</button>
         </div>
       </div>
@@ -312,6 +318,16 @@ export function Workspace() {
           );
         }}
       />
+      {suggesting && (
+        <SuggestionDialog
+          snapshot={result}
+          execute={execute}
+          onClose={() => setSuggesting(false)}
+        />
+      )}
+      {versioning && (
+        <VersionDialog snapshot={result} onClose={() => setVersioning(false)} />
+      )}
       {importing && (
         <ImportWizard snapshot={result} onClose={() => setImporting(false)} />
       )}

@@ -1,5 +1,10 @@
 import { repository, type Repository } from "../../db/repository";
-import { parseBackup, remapBackup, type Backup } from "./backup";
+import {
+  checkpointSchema,
+  parseBackup,
+  remapBackup,
+  type Backup,
+} from "./backup";
 import { calculateEventStats } from "../../domain/calculations";
 import type { Snapshot } from "../../domain/models";
 export class BackupService {
@@ -41,11 +46,30 @@ export class BackupService {
   }
   markDownloaded(b: Backup) {
     return this.repo.transaction(async () => {
-      for (const event of b.events)
+      for (const event of b.events) {
         await this.repo.database.localMeta.put({
           key: `backup:${event.id}`,
           value: b.exportedAt,
         });
+        const key = `historyDirty:${event.id}`;
+        const dirty = await this.repo.database.localMeta.get(key);
+        const current = (
+          await this.repo.database.checkpoints
+            .where("eventId")
+            .equals(event.id)
+            .toArray()
+        ).sort((a, b) => a.id.localeCompare(b.id));
+        const exported = b.checkpoints
+          .filter((cp) => cp.eventId === event.id)
+          .sort((a, b) => a.id.localeCompare(b.id));
+        if (
+          dirty &&
+          dirty.value <= b.exportedAt &&
+          JSON.stringify(current.map((cp) => checkpointSchema.parse(cp))) ===
+            JSON.stringify(exported)
+        )
+          await this.repo.database.localMeta.delete(key);
+      }
       await this.repo.database.localMeta.put({
         key: "lastBackup",
         value: b.exportedAt,

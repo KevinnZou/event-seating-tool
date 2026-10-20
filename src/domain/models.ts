@@ -88,3 +88,24 @@ export const attendanceLabels = {
   tentative: "待定",
   declined: "不参加",
 };
+
+export const eventInputSchema = eventSchema.pick({
+  name: true,
+  type: true,
+  date: true,
+  defaultCapacity: true,
+});
+export const guestInputSchema = guestSchema.pick({
+  displayName: true,
+  size: true,
+  kind: true,
+  category: true,
+  attendance: true,
+  note: true,
+});
+export const tableInputSchema = tableSchema.pick({
+  label: true,
+  capacity: true,
+  locked: true,
+  note: true,
+});

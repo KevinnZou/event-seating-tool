@@ -20,6 +20,10 @@ export class CheckpointService {
         reason,
         snapshot,
       });
+      await this.repo.database.localMeta.put({
+        key: `historyDirty:${eventId}`,
+        value: new Date().toISOString(),
+      });
       return id;
     });
   }
@@ -29,6 +33,10 @@ export class CheckpointService {
       if (!cp || cp.eventId !== eventId)
         throw new Error("检查点不属于当前活动");
       await this.repo.database.checkpoints.delete(id);
+      await this.repo.database.localMeta.put({
+        key: `historyDirty:${eventId}`,
+        value: new Date().toISOString(),
+      });
     });
   }
   restore(eventId: string, id: string) {

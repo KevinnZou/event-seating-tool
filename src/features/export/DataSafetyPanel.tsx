@@ -22,7 +22,12 @@ export function DataSafetyPanel({
       db.checkpoints.where("eventId").equals(id).reverse().sortBy("createdAt"),
     [id],
   );
-  const needsBackup = !last || last.value < snapshot.event.updatedAt;
+  const historyDirty = useLiveQuery(
+    () => db.localMeta.get(`historyDirty:${id}`),
+    [id],
+  );
+  const needsBackup =
+    !last || last.value < snapshot.event.updatedAt || Boolean(historyDirty);
   useEffect(() => {
     if (!needsBackup || !snapshot.guests.length) return;
     const handler = (e: BeforeUnloadEvent) => {
@@ -53,7 +58,7 @@ export function DataSafetyPanel({
       </div>
       <p className={needsBackup ? "notice" : "muted"}>
         {needsBackup
-          ? "当前变更尚未触发外部备份下载，建议现在下载。"
+          ? "当前名单或方案/检查点变更尚未备份，建议现在下载。"
           : "最近下载时间覆盖当前活动版本。"}{" "}
         本机检查点与IndexedDB均可能随站点数据清理而丢失。
       </p>
@@ -94,11 +99,13 @@ export function DataSafetyPanel({
             {checkpoints.map((cp) => (
               <li key={cp.id}>
                 {new Date(cp.createdAt).toLocaleString("zh-CN")} ·{" "}
-                {cp.reason === "import"
-                  ? "导入前"
-                  : cp.reason === "manual"
-                    ? "手动保存"
-                    : "变更前"}{" "}
+                {cp.name
+                  ? `命名方案：${cp.name}`
+                  : cp.reason === "import"
+                    ? "导入前"
+                    : cp.reason === "manual"
+                      ? "手动保存"
+                      : "变更前"}{" "}
                 <button
                   className="link-button"
                   disabled={busy}
