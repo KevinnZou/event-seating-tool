@@ -246,7 +246,11 @@ test("桌卡整组移动：桌面拖放与手机菜单", async ({ page }, testIn
   }
   await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
   await expect(page.getByLabel("工作台安排 示例小禾一家")).not.toHaveValue("");
-  await page.getByRole("button", { name: "撤销", exact: true }).click();
+  // dnd-kit retains a capture-phase click blocker for 50ms after pointer-up.
+  // A real press duration keeps this follow-up click outside that drop-click guard.
+  await page
+    .getByRole("button", { name: "撤销", exact: true })
+    .click({ delay: 80 });
   await expect(page.getByTestId("stat-已安排人数")).toHaveText("0");
 });
 
@@ -326,6 +330,21 @@ test("桌位详情完整展示、移动、容量阻止、整桌迁出与撤销",
   await detail.getByRole("button", { name: "完成", exact: true }).click();
   await page.reload();
   await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+  const lockedRow = page
+    .locator("tr")
+    .filter({ has: page.getByRole("button", { name: "查看 66 桌详情" }) });
+  await lockedRow.getByRole("button", { name: "锁定", exact: true }).click();
+  await page.getByRole("button", { name: "排桌工作台", exact: true }).click();
+  const lockedZone = page
+    .locator(".board-zone")
+    .filter({ has: page.getByRole("heading", { name: "66 桌", exact: true }) });
+  await lockedZone.getByRole("button", { name: "查看详情" }).click();
+  await expect(detail.getByLabel("详情安排 示例小禾一家")).toBeDisabled();
+  await expect(detail.getByLabel("选择未安排宾客入桌")).toBeDisabled();
+  await expect(
+    detail.getByRole("button", { name: "全部迁回未安排" }),
+  ).toBeDisabled();
+  await expect(detail.getByRole("button", { name: "编辑桌位" })).toBeDisabled();
 });
 
 test("家庭拆成三组实时守恒、移除份额、刷新与撤销重做", async ({ page }) => {
