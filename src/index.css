@@ -1435,6 +1435,7 @@ h3 {
     align-items: stretch;
   }
   .workspace-heading > .actions {
+    max-width: none;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
@@ -1451,5 +1452,206 @@ h3 {
 @media print {
   .plan-delivery {
     page: venue-plan;
+  }
+}
+
+/* Review pass: put the working surface ahead of secondary information. */
+.workspace-heading {
+  margin-bottom: 16px;
+}
+.workspace-stats {
+  margin: 16px 0 12px;
+  padding: 12px 0;
+}
+.workspace-stats .stat strong {
+  font-size: 26px;
+  line-height: 1.35;
+}
+.workspace-tools {
+  margin-top: 14px;
+}
+.workspace-tools > .actions {
+  gap: 6px;
+}
+.workspace-tools > p {
+  font-size: 12px;
+}
+.workspace-feedback {
+  position: fixed;
+  z-index: 50;
+  bottom: 24px;
+  right: 24px;
+  max-width: min(520px, calc(100vw - 32px));
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  border: 1px solid #b5d5d0;
+  box-shadow: 0 6px 24px #182d3120;
+}
+.workspace-feedback.error {
+  border-color: #e8bdb8;
+}
+.workspace-feedback button {
+  flex-shrink: 0;
+  padding: 6px 10px;
+}
+.demo-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+.demo-intro {
+  grid-column: 1 / -1;
+}
+.demo-intro h2 {
+  font-size: 18px;
+}
+.demo-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: white;
+  padding: 24px;
+}
+.demo-card h3 {
+  margin: 6px 0;
+}
+.demo-card p {
+  font-size: 14px;
+  color: #65777d;
+  margin-bottom: 18px;
+}
+.demo-card button {
+  white-space: normal;
+}
+.plan-quick-seat {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.plan-quick-seat > strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.plan-quick-seat select {
+  min-width: 0;
+}
+.plan-pending-group[aria-expanded="true"] {
+  border-color: var(--accent);
+  background: #e3f1f0;
+}
+.plan-seat-summary {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 7px;
+  background: #eaf3f2;
+}
+.plan-seat-summary strong {
+  font-size: 20px;
+  color: var(--accent);
+}
+.plan-seat-summary span {
+  font-size: 12px;
+  color: #43635e;
+}
+.plan-inspector-shortcut {
+  display: none;
+}
+.plan-inspector:focus {
+  outline: 3px solid #74ada6;
+  outline-offset: 3px;
+}
+dialog > header.section-heading {
+  position: sticky;
+  top: -24px;
+  z-index: 5;
+  background: white;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+dialog form > footer {
+  position: sticky;
+  bottom: -24px;
+  z-index: 4;
+  background: white;
+  padding-bottom: 12px;
+}
+@media (max-width: 1100px) {
+  .plan-inspector-shortcut {
+    display: inline-flex;
+    margin-top: 8px;
+  }
+}
+@media (max-width: 650px) {
+  .workspace-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    padding: 12px 0;
+  }
+  .workspace-stats .stat:nth-child(2) {
+    border-right: 1px solid var(--border);
+  }
+  .workspace-stats .stat strong {
+    font-size: 23px;
+  }
+  .workspace-stats .stat span {
+    font-size: 11px;
+  }
+  .workspace-heading h1 {
+    overflow-wrap: anywhere;
+  }
+  .plan-heading {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .plan-heading .eyebrow {
+    display: none;
+  }
+  .plan-heading p {
+    font-size: 12px;
+  }
+  .plan-toolbar {
+    gap: 8px;
+  }
+  .plan-toolbar .actions {
+    gap: 4px;
+  }
+  .plan-toolbar button {
+    padding: 8px 10px;
+  }
+  .plan-pending-group {
+    touch-action: pan-y;
+  }
+  .workspace-feedback {
+    bottom: 12px;
+    right: 16px;
+    left: 16px;
+    max-height: 35dvh;
+    overflow-y: auto;
+  }
+  .demo-gallery {
+    grid-template-columns: 1fr;
+  }
+  .demo-card {
+    padding: 18px;
+  }
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+@media print {
+  .workspace-feedback,
+  .plan-inspector-shortcut {
+    display: none;
   }
 }

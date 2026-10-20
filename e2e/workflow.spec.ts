@@ -334,6 +334,7 @@ test("桌位详情完整展示、移动、容量阻止、整桌迁出与撤销",
   await detail.getByRole("button", { name: "完成", exact: true }).click();
   await page.reload();
   await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+  await page.getByRole("button", { name: "名单与桌位", exact: true }).click();
   const lockedRow = page
     .locator("tr")
     .filter({ has: page.getByRole("button", { name: "查看 66 桌详情" }) });

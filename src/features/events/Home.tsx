@@ -84,26 +84,41 @@ export function Home() {
           />
         ))
       )}
-      <button
-        className="demo"
-        disabled={busy}
-        onClick={() =>
-          void run(async () => navigate(`/events/${await createDemo()}`))
-        }
-      >
-        {busy ? "正在处理…" : "试用虚构演示"}
-      </button>
-      <button
-        className="demo"
-        disabled={busy}
-        onClick={() =>
-          void run(async () =>
-            navigate(`/events/${await createVenueDemo()}?view=floor`),
-          )
-        }
-      >
-        试用场地平面图演示
-      </button>
+      <section className="demo-gallery" aria-label="虚构示例体验">
+        <div className="demo-intro">
+          <h2>先体验，再开始</h2>
+          <p className="muted">每次创建独立的虚构活动，可自由修改。</p>
+        </div>
+        <article className="demo-card">
+          <span className="eyebrow">名单与整组排桌</span>
+          <h3>从一家四口开始</h3>
+          <p>3 张圆桌，体验家庭组人数统计、换桌与撤销。</p>
+          <button
+            disabled={busy}
+            onClick={() =>
+              void run(async () => navigate(`/events/${await createDemo()}`))
+            }
+          >
+            试用虚构演示
+          </button>
+        </article>
+        <article className="demo-card">
+          <span className="eyebrow">场地可视化</span>
+          <h3>把整个宴会厅铺开</h3>
+          <p>12 张圆桌，体验舞台与入口布局、整组安排和场地图导出。</p>
+          <button
+            disabled={busy}
+            onClick={() =>
+              void run(async () =>
+                navigate(`/events/${await createVenueDemo()}?view=floor`),
+              )
+            }
+          >
+            试用场地平面图演示
+          </button>
+        </article>
+        {busy && <p role="status">正在处理，请稍候…</p>}
+      </section>
       <div className="data-management">
         <button
           className="link-button danger"

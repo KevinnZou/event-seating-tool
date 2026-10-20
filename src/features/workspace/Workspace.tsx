@@ -16,7 +16,12 @@ import { BatchActions } from "../seating/BatchActions";
 import { Board } from "../seating/Board";
 import { SplitForm } from "../seating/SplitForm";
 import { useState, useSyncExternalStore } from "react";
-import { Link, useParams, useLocation } from "react-router-dom";
+import {
+  Link,
+  useParams,
+  useLocation,
+  useSearchParams,
+} from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../../db/database";
 import { repository } from "../../db/repository";
@@ -35,6 +40,20 @@ import { GuestsPanel } from "./GuestsPanel";
 export function Workspace() {
   const { eventId = "" } = useParams();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedView = searchParams.get("view");
+  const view =
+    requestedView === "floor" || requestedView === "board"
+      ? requestedView
+      : "list";
+  function setView(next: string) {
+    setSearchParams((previous) => {
+      const params = new URLSearchParams(previous);
+      if (next === "list") params.delete("view");
+      else params.set("view", next);
+      return params;
+    });
+  }
   const peerWarning = usePeerWarning(eventId);
   const [suggesting, setSuggesting] = useState(false),
     [versioning, setVersioning] = useState(false);
@@ -53,11 +72,6 @@ export function Workspace() {
   const [message, setMessage] = useState("");
   const [filters, setFilters] = useState(initialFilters),
     [selected, setSelected] = useState<string[]>([]),
-    [view, setView] = useState(
-      new URLSearchParams(location.search).get("view") === "floor"
-        ? "floor"
-        : "list",
-    ),
     [split, setSplit] = useState<GuestGroupEntity | null>(null);
   useSyncExternalStore(historyService.subscribe, historyService.getRevision);
   const execute = (action: () => Promise<unknown>) =>
@@ -120,7 +134,7 @@ export function Workspace() {
           {location.state.restoreReport}
         </p>
       )}
-      <div className="stats">
+      <div className="stats workspace-stats">
         {[
           ["计划出席", stats.plannedCount],
           ["桌位数量", stats.tableCount],
@@ -143,18 +157,23 @@ export function Workspace() {
           ? "正在保存…"
           : `已保存到本机 · ${new Date(result.event.updatedAt).toLocaleString("zh-CN")}`}
       </p>
-      {message && (
-        <p className="success" role="status">
-          {message}
-        </p>
-      )}
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
+      {(message || error) && (
+        <div className={`workspace-feedback ${error ? "error" : "success"}`}>
+          <p role={error ? "alert" : "status"}>{error || message}</p>
+          <button
+            type="button"
+            aria-label="关闭操作反馈"
+            onClick={() => {
+              setError("");
+              setMessage("");
+            }}
+          >
+            关闭
+          </button>
+        </div>
       )}
       <div className="workspace-tools">
-        <div className="actions">
+        <div className="actions" role="group" aria-label="工作区视图与历史操作">
           <button
             aria-pressed={view === "list"}
             onClick={() => setView("list")}
@@ -162,7 +181,6 @@ export function Workspace() {
             名单与桌位
           </button>
           <button
-            className="primary"
             aria-pressed={view === "floor"}
             onClick={() => setView("floor")}
           >

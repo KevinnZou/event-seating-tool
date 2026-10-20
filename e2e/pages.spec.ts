@@ -101,6 +101,10 @@ test("生产版离线重开保留安排，尚未访问的导出和Excel也可离
         }
       }),
     ).toBe(true);
+    await expect(
+      page.getByRole("button", { name: "场地平面图", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "名单与桌位", exact: true }).click();
     await page
       .getByLabel("安排 示例小禾一家 的桌位")
       .selectOption({ label: "66 桌" });

@@ -253,6 +253,9 @@ test("V02 建议预览期间外部变更使旧预览失效", async ({ page, cont
   other.on("dialog", (d) => d.accept());
   try {
     await other.goto(url);
+    await other
+      .getByRole("button", { name: "名单与桌位", exact: true })
+      .click();
     const row = other
       .locator("tr")
       .filter({ has: other.getByText("示例小禾一家", { exact: true }) });
@@ -305,4 +308,67 @@ test("V02 场地演示直达可视化，12张跳号桌与完整区域", async ({
   const pending = page.waitForEvent("download");
   await page.getByRole("button", { name: "下载PNG场地图" }).click();
   await (await pending).saveAs(testInfo.outputPath("fictional-venue-demo.png"));
+});
+
+test("UI走查：点选整组安排、容量提示、视图刷新和手机详情入口", async ({
+  page,
+}, testInfo) => {
+  await demo(page);
+  const pending = page.locator(".plan-pending");
+  const disclosure = pending.locator("summary");
+  if (
+    !(await pending
+      .locator("details")
+      .evaluate((el: HTMLDetailsElement) => el.open))
+  )
+    await disclosure.click();
+  await page
+    .getByRole("button", { name: "平面图拖动 示例小禾一家", exact: true })
+    .click();
+  const target = page.getByLabel("为选中宾客选择圆桌");
+  await expect(target).toBeVisible();
+  await target.selectOption({ label: "03 桌 · 余 10 席" });
+  await page.getByRole("button", { name: "确认安排整组" }).click();
+  await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+  await expect(
+    page.getByRole("status").filter({ hasText: "变更已保存" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "关闭操作反馈" }).click();
+  await page.getByRole("button", { name: /^平面图 03 桌/ }).click();
+  if (
+    testInfo.project.use.isMobile ||
+    testInfo.project.name === "tablet-webkit"
+  ) {
+    await page.getByRole("button", { name: "查看选中项详情与名单 ↓" }).click();
+    await expect(page.locator("#plan-inspector")).toBeFocused();
+  }
+  if (process.env.CAPTURE_REVIEW) {
+    await page.locator(".floorplan-feature").scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: `output/playwright/ui-review/plan-${testInfo.project.name}.png`,
+    });
+  }
+  const move = page.getByLabel("平面图移动 示例小禾一家");
+  await expect(move.locator("option:checked")).toHaveText(
+    "03 桌 · 余 6 席 · 当前桌",
+  );
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "场地平面图", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "排桌工作台", exact: true }).click();
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "排桌工作台", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "名单与桌位", exact: true }).click();
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "名单与桌位", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
 });

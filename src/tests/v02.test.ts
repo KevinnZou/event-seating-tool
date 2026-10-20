@@ -395,3 +395,29 @@ it("方案对比明确显示区域类型变化，不把舞台改入口显示成�
   expect(change.before).toContain("舞台");
   expect(change.after).toContain("入口");
 });
+
+it("换桌菜单按整组人数说明余席和锁定原因，当前桌保留可选且不修改快照", async () => {
+  const { tableChoices } = await import("../features/seating/tableChoices");
+  const snapshot = fixture();
+  const family = snapshot.guests[0];
+  snapshot.tables[0].capacity = 3;
+  snapshot.tables[2].locked = true;
+  const before = structuredClone(snapshot);
+  const choices = tableChoices(snapshot, family);
+  expect(choices[0]).toMatchObject({
+    disabled: true,
+    label: "01 桌 · 余 3 席 · 差 1 席",
+  });
+  expect(choices[1]).toMatchObject({
+    disabled: false,
+    label: "03 桌 · 余 6 席 · 当前桌",
+  });
+  expect(choices[2]).toMatchObject({
+    disabled: true,
+    label: "66 桌 · 余 10 席 · 已锁定",
+  });
+  snapshot.tables[0].capacity = 4;
+  expect(tableChoices(snapshot, family)[0].disabled).toBe(false);
+  snapshot.tables[0].capacity = 3;
+  expect(snapshot).toEqual(before);
+});

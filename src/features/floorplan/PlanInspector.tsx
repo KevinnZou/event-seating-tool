@@ -1,3 +1,5 @@
+import { occupancy } from "../../domain/calculations";
+import { tableChoices } from "../seating/tableChoices";
 import type { FormEvent } from "react";
 import type { Snapshot, TableEntity } from "../../domain/models";
 import { attendanceLabels } from "../../domain/models";
@@ -28,7 +30,7 @@ export function PlanInspector({
       : venue.areas.find((a) => a.id === selection?.id);
   if (!item || !selection)
     return (
-      <aside className="panel plan-inspector">
+      <aside id="plan-inspector" tabIndex={-1} className="panel plan-inspector">
         <h3>选择一张圆桌</h3>
         <p className="muted">
           点击圆桌查看完整名单；切换“调整布局”后可拖动，或填写坐标精确定位。调整位置不会改动人数。
@@ -58,7 +60,7 @@ export function PlanInspector({
     );
   }
   return (
-    <aside className="panel plan-inspector">
+    <aside id="plan-inspector" tabIndex={-1} className="panel plan-inspector">
       <div className="section-heading">
         <h3>{table ? `${table.label} 桌` : item.label}</h3>
         <span className="muted">
@@ -69,6 +71,115 @@ export function PlanInspector({
               : "场地区域"}
         </span>
       </div>
+      {table && (
+        <div className="plan-seat-summary">
+          <strong>
+            {occupancy(snapshot, table.id)} / {table.capacity} 席
+          </strong>
+          <span>
+            {table.locked
+              ? "已锁定，解锁后可安排或换桌"
+              : `还可安排 ${table.capacity - occupancy(snapshot, table.id)} 人`}
+          </span>
+        </div>
+      )}
+
+      {table ? (
+        <>
+          <button disabled={busy} onClick={() => onDetails(table)}>
+            桌位详情与编辑
+          </button>
+          <label>
+            未安排宾客入本桌
+            <select
+              aria-label="平面图选择宾客入桌"
+              value=""
+              disabled={busy || table.locked || !pending.length}
+              onChange={(e) => {
+                const id = e.target.value;
+                if (id)
+                  void run(() =>
+                    workspaceService.move(snapshot.event.id, [id], table.id),
+                  );
+              }}
+            >
+              <option value="">选择整组宾客</option>
+              {pending.map((g) => (
+                <option
+                  key={g.id}
+                  value={g.id}
+                  disabled={
+                    g.size > table.capacity - occupancy(snapshot, table.id)
+                  }
+                >
+                  {g.displayName}（{g.size}人）
+                  {g.size > table.capacity - occupancy(snapshot, table.id)
+                    ? " · 余席不足"
+                    : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          {groups.length ? (
+            <ul className="plan-roster">
+              {groups.map((g) => (
+                <li key={g.id}>
+                  <strong>{g.displayName}</strong>
+                  <small>
+                    {g.size}人 · {attendanceLabels[g.attendance]}
+                  </small>
+                  <select
+                    aria-label={`平面图移动 ${g.displayName}`}
+                    value={g.tableId!}
+                    disabled={busy || table.locked}
+                    onChange={(e) => {
+                      const target = e.target.value || null;
+                      void run(() =>
+                        workspaceService.move(
+                          snapshot.event.id,
+                          [g.id],
+                          target,
+                        ),
+                      );
+                    }}
+                  >
+                    <option value="">未安排</option>
+                    {tableChoices(snapshot, g).map((choice) => (
+                      <option
+                        key={choice.id}
+                        value={choice.id}
+                        disabled={choice.disabled}
+                      >
+                        {choice.label}
+                      </option>
+                    ))}
+                  </select>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">本桌暂无宾客。</p>
+          )}
+        </>
+      ) : (
+        <div className="actions">
+          <button onClick={() => onEditArea(item as VenueArea)} disabled={busy}>
+            编辑区域
+          </button>
+          <button
+            className="danger"
+            disabled={busy}
+            onClick={() => {
+              if (window.confirm(`删除区域“${item.label}”？宾客和桌位不变。`))
+                void run(() =>
+                  venueService.deleteArea(snapshot.event.id, item.id),
+                );
+            }}
+          >
+            删除区域
+          </button>
+        </div>
+      )}
       <form
         key={`${selection.kind}:${item.id}:${point.x}:${point.y}`}
         onSubmit={submit}
@@ -103,89 +214,6 @@ export function PlanInspector({
         </div>
         <button disabled={busy || table?.locked}>保存位置</button>
       </form>
-      {table ? (
-        <>
-          <button disabled={busy} onClick={() => onDetails(table)}>
-            桌位详情与编辑
-          </button>
-          <label>
-            未安排宾客入本桌
-            <select
-              aria-label="平面图选择宾客入桌"
-              value=""
-              disabled={busy || table.locked || !pending.length}
-              onChange={(e) => {
-                const id = e.target.value;
-                if (id)
-                  void run(() =>
-                    workspaceService.move(snapshot.event.id, [id], table.id),
-                  );
-              }}
-            >
-              <option value="">选择整组宾客</option>
-              {pending.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.displayName}（{g.size}人）
-                </option>
-              ))}
-            </select>
-          </label>
-          {groups.length ? (
-            <ul className="plan-roster">
-              {groups.map((g) => (
-                <li key={g.id}>
-                  <strong>{g.displayName}</strong>
-                  <small>
-                    {g.size}人 · {attendanceLabels[g.attendance]}
-                  </small>
-                  <select
-                    aria-label={`平面图移动 ${g.displayName}`}
-                    value={g.tableId!}
-                    disabled={busy || table.locked}
-                    onChange={(e) => {
-                      const target = e.target.value || null;
-                      void run(() =>
-                        workspaceService.move(
-                          snapshot.event.id,
-                          [g.id],
-                          target,
-                        ),
-                      );
-                    }}
-                  >
-                    <option value="">未安排</option>
-                    {snapshot.tables.map((t) => (
-                      <option key={t.id} value={t.id} disabled={t.locked}>
-                        {t.label} 桌
-                      </option>
-                    ))}
-                  </select>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="muted">本桌暂无宾客。</p>
-          )}
-        </>
-      ) : (
-        <div className="actions">
-          <button onClick={() => onEditArea(item as VenueArea)} disabled={busy}>
-            编辑区域
-          </button>
-          <button
-            className="danger"
-            disabled={busy}
-            onClick={() => {
-              if (window.confirm(`删除区域“${item.label}”？宾客和桌位不变。`))
-                void run(() =>
-                  venueService.deleteArea(snapshot.event.id, item.id),
-                );
-            }}
-          >
-            删除区域
-          </button>
-        </div>
-      )}
     </aside>
   );
 }

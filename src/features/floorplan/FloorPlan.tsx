@@ -1,3 +1,4 @@
+import { tableChoices } from "../seating/tableChoices";
 import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -24,9 +25,13 @@ import { AreaForm } from "./AreaForm";
 function PendingGroup({
   guest,
   disabled,
+  onSelect,
+  selected,
 }: {
   guest: GuestGroupEntity;
   disabled: boolean;
+  onSelect: () => void;
+  selected: boolean;
 }) {
   const { setNodeRef, listeners, attributes, transform } = useDraggable({
     id: guest.id,
@@ -39,6 +44,8 @@ function PendingGroup({
       {...listeners}
       {...attributes}
       disabled={disabled}
+      onClick={onSelect}
+      aria-expanded={selected}
       aria-label={`平面图拖动 ${guest.displayName}`}
       style={
         transform
@@ -78,6 +85,12 @@ export function FloorPlan({
   const [pendingOpen, setPendingOpen] = useState(
     () => !window.matchMedia("(max-width: 650px)").matches,
   );
+  const [chosenGuestId, setChosenGuestId] = useState("");
+  const [targetTableId, setTargetTableId] = useState("");
+  const chosenGuest = snapshot.guests.find(
+    (g) => g.id === chosenGuestId && !g.tableId && g.attendance !== "declined",
+  );
+  const choices = chosenGuest ? tableChoices(snapshot, chosenGuest) : [];
   const [activeGuest, setActiveGuest] = useState<GuestGroupEntity | null>(null);
   const [area, setArea] = useState<VenueArea | "new" | null>(null);
   const [width, setWidth] = useState(800);
@@ -163,7 +176,7 @@ export function FloorPlan({
       <p className="plan-mode-hint">
         {layoutMode
           ? "拖动圆桌或区域调整位置。选中圆桌后可用方向键每次移动10，或在详情填写坐标；锁定桌不可移动。"
-          : "从未安排区拖入圆桌，或点击圆桌后用菜单安排。手机可横向滚动画布、放大查看，无需拖拽。"}
+          : "点击未安排宾客选择目标桌，或将整组拖入圆桌。点击圆桌查看名单和换桌菜单。"}
       </p>
       <DndContext
         sensors={sensors}
@@ -215,12 +228,74 @@ export function FloorPlan({
                     key={guest.id}
                     guest={guest}
                     disabled={busy || layoutMode}
+                    selected={chosenGuestId === guest.id}
+                    onSelect={() => {
+                      setChosenGuestId(
+                        chosenGuestId === guest.id ? "" : guest.id,
+                      );
+                      setTargetTableId("");
+                    }}
                   />
                 ))}
                 {!shown.length && (
                   <p className="muted">暂无符合条件的未安排宾客。</p>
                 )}
               </div>
+              {chosenGuest && !layoutMode && (
+                <form
+                  className="plan-quick-seat"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (
+                      targetTableId &&
+                      choices.some((c) => c.id === targetTableId && !c.disabled)
+                    )
+                      void run(() =>
+                        workspaceService.move(
+                          snapshot.event.id,
+                          [chosenGuest.id],
+                          targetTableId,
+                        ),
+                      );
+                  }}
+                >
+                  <strong>
+                    {chosenGuest.displayName} · {chosenGuest.size} 人
+                  </strong>
+                  <label>
+                    目标圆桌
+                    <select
+                      aria-label="为选中宾客选择圆桌"
+                      value={targetTableId}
+                      disabled={busy}
+                      onChange={(e) => setTargetTableId(e.target.value)}
+                    >
+                      <option value="">选择可容纳整组的桌</option>
+                      {choices.map((c) => (
+                        <option key={c.id} value={c.id} disabled={c.disabled}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {choices.every((c) => c.disabled) && (
+                    <p className="muted">
+                      暂无可容纳本组的未锁定桌，请新增桌位或调整容量。
+                    </p>
+                  )}
+                  <button
+                    className="primary"
+                    disabled={
+                      busy ||
+                      !choices.some(
+                        (c) => c.id === targetTableId && !c.disabled,
+                      )
+                    }
+                  >
+                    确认安排整组
+                  </button>
+                </form>
+              )}
             </details>
           </aside>
           <div ref={container} className="plan-center">
@@ -242,6 +317,25 @@ export function FloorPlan({
                 )
               }
             />
+            {selection && (
+              <button
+                className="plan-inspector-shortcut"
+                onClick={() => {
+                  const inspector = document.getElementById("plan-inspector");
+                  inspector?.scrollIntoView({
+                    block: "nearest",
+                    behavior: window.matchMedia(
+                      "(prefers-reduced-motion: reduce)",
+                    ).matches
+                      ? "instant"
+                      : "smooth",
+                  });
+                  inspector?.focus({ preventScroll: true });
+                }}
+              >
+                查看选中项详情与名单 ↓
+              </button>
+            )}
           </div>
           <PlanInspector
             snapshot={snapshot}
