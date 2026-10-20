@@ -77,6 +77,10 @@ export class HistoryService {
     stack.undo.push({ ...entry, after: restored });
     this.emit();
   }
+  reset() {
+    this.stacks.clear();
+    this.emit();
+  }
   clear(id: string) {
     this.stacks.delete(id);
     this.emit();

@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vitest/config";
 export default defineConfig({
   base: "./",
+  build: { chunkSizeWarningLimit: 1000 },
   plugins: [react(), tailwindcss()],
   test: {
     environment: "jsdom",

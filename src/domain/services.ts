@@ -127,6 +127,7 @@ export class SeatingService {
       await d.guests.where("eventId").equals(eventId).delete();
       await d.seatingTables.where("eventId").equals(eventId).delete();
       await d.checkpoints.where("eventId").equals(eventId).delete();
+      await d.localMeta.delete(`backup:${eventId}`);
       await d.events.delete(eventId);
     });
   }

@@ -1,3 +1,6 @@
+import { BackupManager } from "../export/BackupManager";
+import { downloadBackup } from "../export/backupDownloads";
+import { ClearAllDialog } from "./ClearAllDialog";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -18,6 +21,8 @@ export function Home() {
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [backingUp, setBackingUp] = useState(false),
+    [clearing, setClearing] = useState(false);
   async function run(action: () => Promise<unknown>) {
     setBusy(true);
     setError("");
@@ -38,13 +43,15 @@ export function Home() {
           <h1>本地活动</h1>
           <p className="muted">无需登录 · 仅保存在本机 · 建议下载备份</p>
         </div>
-        <button className="primary" onClick={() => setEdit("new")}>
-          新建活动
-        </button>
+        <div className="actions">
+          <button onClick={() => setBackingUp(true)}>备份与恢复</button>
+          <button className="primary" onClick={() => setEdit("new")}>
+            新建活动
+          </button>
+        </div>
       </div>
       <p className="notice">
-        活动数据仅保存在当前浏览器。清理站点数据、换设备或使用无痕模式可能丢失数据。完整备份与恢复将在
-        M4 提供。
+        活动数据仅保存在当前浏览器。清理站点数据、换设备或使用无痕模式可能丢失数据。请定期下载完整JSON备份。
       </p>
       {error && (
         <p role="alert" className="error">
@@ -86,6 +93,16 @@ export function Home() {
       >
         {busy ? "正在处理…" : "试用虚构演示"}
       </button>
+      <div className="data-management">
+        <button
+          className="link-button danger"
+          onClick={() => setClearing(true)}
+        >
+          清空全部本地数据
+        </button>
+      </div>
+      {backingUp && <BackupManager onClose={() => setBackingUp(false)} />}
+      {clearing && <ClearAllDialog onClose={() => setClearing(false)} />}
       {edit && (
         <EventForm
           initial={edit === "new" ? undefined : edit}
@@ -112,9 +129,15 @@ export function Home() {
           >
             <p>
               将永久删除“{deleting.name}
-              ”及全部桌位、宾客组。建议先保留名单副本；当前 M1
-              尚不提供文件备份。
+              ”及全部桌位、宾客组。请先下载完整备份；删除后可从文件恢复。
             </p>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void run(() => downloadBackup(deleting.id))}
+            >
+              先下载该活动备份
+            </button>
             <label>
               输入完整活动名称确认
               <input

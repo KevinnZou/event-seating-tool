@@ -1,3 +1,6 @@
+import { BackupManager } from "../export/BackupManager";
+import { DataSafetyPanel } from "../export/DataSafetyPanel";
+import { usePeerWarning } from "../../app/usePeerWarning";
 import { ImportWizard } from "../import/ImportWizard";
 import { ValidationCenter } from "./ValidationCenter";
 import { historyService } from "../../domain/historyService";
@@ -8,7 +11,7 @@ import { BatchActions } from "../seating/BatchActions";
 import { Board } from "../seating/Board";
 import { SplitForm } from "../seating/SplitForm";
 import { useState, useSyncExternalStore } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useLocation } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../../db/database";
 import { repository } from "../../db/repository";
@@ -26,6 +29,9 @@ import { TablesPanel } from "./TablesPanel";
 import { GuestsPanel } from "./GuestsPanel";
 export function Workspace() {
   const { eventId = "" } = useParams();
+  const location = useLocation();
+  const peerWarning = usePeerWarning(eventId);
+  const [backingUp, setBackingUp] = useState(false);
   const result = useLiveQuery(async () => {
     const event = await db.events.get(eventId);
     return event ? repository.snapshot(eventId) : null;
@@ -84,9 +90,22 @@ export function Workspace() {
         </div>
         <div className="actions">
           <button onClick={() => setImporting(true)}>导入名单</button>
+          <Link className="button" to={`/events/${eventId}/export`}>
+            导出交付
+          </Link>
           <button onClick={() => setEdit(true)}>编辑活动</button>
         </div>
       </div>
+      {peerWarning && (
+        <p role="status" className="notice">
+          另一个标签页也在查看此活动。请集中在一个标签页修改；导入与撤销会检测数据冲突。
+        </p>
+      )}
+      {typeof location.state?.restoreReport === "string" && (
+        <p role="status" className="success">
+          {location.state.restoreReport}
+        </p>
+      )}
       <div className="stats">
         {[
           ["计划出席", stats.plannedCount],
@@ -245,9 +264,10 @@ export function Workspace() {
       {importing && (
         <ImportWizard snapshot={result} onClose={() => setImporting(false)} />
       )}
-      <p className="notice" style={{ marginTop: 20 }}>
-        仅保存在当前浏览器。M1 暂无文件备份，请使用虚构数据试用。
-      </p>
+      <DataSafetyPanel snapshot={result} onBackup={() => setBackingUp(true)} />
+      {backingUp && (
+        <BackupManager eventId={eventId} onClose={() => setBackingUp(false)} />
+      )}
       {split && (
         <SplitForm
           eventId={eventId}

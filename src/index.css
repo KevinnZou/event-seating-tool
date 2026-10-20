@@ -676,3 +676,180 @@ tr:focus {
   outline: 3px solid #74ada6;
   outline-offset: -3px;
 }
+.safety-panel {
+  margin-top: 20px;
+}
+.safety-panel .actions {
+  margin: 16px 0;
+}
+.safety-panel details {
+  margin-top: 14px;
+}
+.safety-panel li {
+  font-size: 13px;
+  padding: 4px 0;
+}
+.data-management {
+  margin-top: 30px;
+  text-align: right;
+}
+.export-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0;
+}
+.export-controls > .actions {
+  margin-bottom: 14px;
+}
+.print-report {
+  background: white;
+  color: #182d31;
+  padding: 30px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-top: 24px;
+}
+.print-report > header {
+  border-bottom: 2px solid #14665f;
+  padding-bottom: 18px;
+  margin-bottom: 20px;
+}
+.print-report > section {
+  margin: 22px 0;
+}
+.print-report p {
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.print-table {
+  margin: 16px 0;
+  width: 100%;
+  table-layout: fixed;
+}
+.print-table th,
+.print-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.print-table td:last-child {
+  white-space: pre-wrap;
+}
+.print-table th:nth-child(2) {
+  width: 12%;
+}
+.print-table thead th {
+  background: #edf3f3;
+}
+.print-table tr {
+  break-inside: avoid;
+}
+.print-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.print-card-grid .print-table {
+  align-self: start;
+}
+.print-parity-list {
+  columns: 2;
+  column-gap: 20px;
+}
+.print-parity-list .print-table {
+  break-inside: avoid;
+}
+@media (max-width: 650px) {
+  .print-report {
+    padding: 16px;
+  }
+  .print-card-grid {
+    grid-template-columns: 1fr;
+  }
+  .print-parity-list {
+    columns: 1;
+  }
+  .safety-panel .section-heading {
+    align-items: flex-start;
+  }
+  .safety-panel .section-heading h2 {
+    font-size: 17px;
+  }
+  .safety-panel .section-heading button {
+    white-space: normal;
+    max-width: 130px;
+  }
+}
+@page {
+  size: A4;
+  margin: 12mm;
+}
+@media print {
+  body {
+    background: white;
+    color: black;
+    font-size: 11pt;
+  }
+  .topbar,
+  .site-footer,
+  .export-controls,
+  dialog {
+    display: none !important;
+  }
+  main {
+    max-width: none;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .print-report {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+  }
+  .print-report h1 {
+    font-size: 20pt;
+  }
+  .print-report h2 {
+    font-size: 14pt;
+    break-after: avoid;
+  }
+  .print-report h3 {
+    font-size: 12pt;
+  }
+  .print-report > section {
+    margin: 12pt 0;
+  }
+  .print-report header {
+    border-color: black;
+  }
+  .print-report th,
+  .print-report td {
+    font-size: 9pt;
+    padding: 5pt;
+    border-color: #888;
+  }
+  .print-table {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .print-table thead {
+    display: table-header-group;
+  }
+  .print-table tr {
+    break-inside: avoid;
+  }
+  .print-card-grid {
+    gap: 10mm;
+    align-items: start;
+  }
+  .print-parity-list {
+    columns: 2;
+  }
+  .print-report * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

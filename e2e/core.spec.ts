@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 test("M1 虚构数据完整流程、活动隔离、刷新与无拖拽移动", async ({
   page,
 }, testInfo) => {
+  page.on("dialog", (d) => d.accept());
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
