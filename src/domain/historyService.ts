@@ -57,6 +57,8 @@ export class HistoryService {
       entry.before,
     );
     stack.undo.pop();
+    const previous = stack.undo.at(-1);
+    if (previous) previous.after = restored;
     stack.redo.push({ ...entry, before: restored });
     this.emit();
   }
@@ -70,6 +72,8 @@ export class HistoryService {
       entry.after,
     );
     stack.redo.pop();
+    const next = stack.redo.at(-1);
+    if (next) next.before = restored;
     stack.undo.push({ ...entry, after: restored });
     this.emit();
   }

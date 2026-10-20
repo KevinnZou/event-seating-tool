@@ -101,3 +101,19 @@ it("拼音、原文、分类、未安排筛选和自然桌号排序", async () =
     filterGuests(s, { ...initialFilters, table: "unassigned" }),
   ).toHaveLength(2);
 });
+
+it("连续多步撤销和重做不会被更新时间误判为外部修改", async () => {
+  const s = await repo.snapshot(id);
+  await history.execute(id, () =>
+    svc.move(id, [s.guests[0].id], s.tables[0].id),
+  );
+  await history.execute(id, () =>
+    svc.move(id, [s.guests[1].id], s.tables[1].id),
+  );
+  await history.undo(id);
+  await history.undo(id);
+  expect(calculateEventStats(await repo.snapshot(id)).assignedCount).toBe(0);
+  await history.redo(id);
+  await history.redo(id);
+  expect(calculateEventStats(await repo.snapshot(id)).assignedCount).toBe(11);
+});

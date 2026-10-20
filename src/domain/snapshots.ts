@@ -21,10 +21,11 @@ export function parseSnapshot(input: unknown): Snapshot {
   return s;
 }
 export function fingerprint(s: Snapshot) {
+  const normalized = snapshotSchema.parse(s);
   return JSON.stringify({
-    ...s,
-    guests: [...s.guests].sort((a, b) => a.id.localeCompare(b.id)),
-    tables: [...s.tables].sort((a, b) => a.id.localeCompare(b.id)),
+    event: normalized.event,
+    guests: normalized.guests.sort((a, b) => a.id.localeCompare(b.id)),
+    tables: normalized.tables.sort((a, b) => a.id.localeCompare(b.id)),
   });
 }
 export function planMove(
