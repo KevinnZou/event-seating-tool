@@ -39,3 +39,14 @@ f6e7024 fix(storage): make snapshot replacement atomic for standalone callers
 ```
 
 本轮最终验收包为docs/REVIEW_READY.md，结果为81项单元/集成、84项跨引擎/设备E2E、6项生产子路径/离线/更新测试。每个功能提交前均完成lint/typecheck/tests/build及相关浏览器验证；新增依赖为零。之后另留文档收尾提交，所有提交在本地，没有远程推送或部署。
+
+## V0.2 完整开发
+
+```text
+07d9b2a feat(v02): add persistent venue geometry, named snapshots and safe seating rules
+392c61b feat(floorplan): add venue editor, visual group seating and SVG PNG delivery
+5cc1fb5 feat(versions): deliver named comparisons and explainable seating previews with backup safeguards
+f678b68 feat(demo): add complete venue example and finalize offline print verification
+```
+
+其后为完整12桌虚构演示、横向打印/离线验证、HMR隔离与统一验收文档提交。当前分支codex/v0.2；完整提交号使用git log复查。最终98项单元/集成、126项六配置E2E、6项双引擎生产/离线测试通过，入口与逐项验收见docs/ACCEPTANCE_V0.2.md。没有远程推送/部署。

@@ -1,4 +1,4 @@
-# 智能排桌助手 V0.1
+# 智能排桌助手 V0.2
 
 中文圆桌活动排桌工具，支持婚礼、宴会、年会。一套 React + TypeScript + Vite 前端，无账号、后端、云数据库或 LLM API。数据只保存在当前浏览器的 IndexedDB（Dexie），所有内置演示与测试数据均虚构。
 
@@ -13,12 +13,15 @@ npm run dev
 
 按终端给出的地址打开；端口被占用时 Vite 会自动递增。生产预览：`npm run build && npm run preview`。当前使用相对 base + HashRouter，适配 GitHub Pages 子路径；未配置任何远程、未推送或部署。
 
-整体验收入口与逐项对照：[docs/REVIEW_READY.md](docs/REVIEW_READY.md)。发布准备：[docs/release/PUBLISH.md](docs/release/PUBLISH.md)。
+V0.2整体验收：[docs/ACCEPTANCE_V0.2.md](docs/ACCEPTANCE_V0.2.md)。V0.1历史记录：[docs/REVIEW_READY.md](docs/REVIEW_READY.md)。发布准备：[docs/release/PUBLISH.md](docs/release/PUBLISH.md)。
 
 ## 页面与功能
 
 - `/#/`：本地活动列表，创建/编辑/复制/删除活动，虚构演示，完整备份恢复，确认清空本地数据。
 - `/#/events/<UUID>`：人数概览、宾客组/桌位 CRUD、拼音与中文搜索、分类/出席/桌位筛选、排序、分页名单、批量移动/状态/删除、整组拖放或菜单移动、多组拆分、桌位详情、整桌迁回未安排、桌位排序/对调、锁定保护、撤销重做、校验定位、检查点管理。
+- `/#/events/<UUID>?view=floor`：场地平面图，整组可视化安排、圆桌自由位置、舞台/入口/区域、缩放/坐标/键盘、重叠提示和自动整理。首页提供全虚构12桌场地演示。
+- `/#/events/<UUID>/plan-export`：SVG/PNG场地图及横向A4打印/PDF，只含桌号、区域与人数；完整姓名名单仍用原报表。
+- 活动顶部“命名方案与差异”：保存/改名/删除/对比/保护恢复；“规则排桌建议”：三种可解释规则、待定开关、先预览后应用，不拆组、不动已排或锁定桌。
 - `/#/help`：创建到交付指引、隐私/数据保留/备份迁移说明、键盘帮助与本地匿名反馈草稿；不自动发送或附加活动数据。
 - “导入名单”：下载虚构CSV/XLSX模板，粘贴中文文本或选择CSV/XLSX，选择Sheet/字段映射，逐行预览/纠错/排除，确认后事务提交。默认新增，可显式按ID指定更新或输入活动名替换全部名单。
 - `/#/events/<UUID>/export`：文字、宾客CSV、桌位CSV、未安排CSV、三Sheet Excel、A4名单/桌卡打印与保存PDF、奇偶桌分组、JSON备份恢复。
@@ -88,6 +91,8 @@ npm run test:pages
 - `src/tests` / `e2e`：虚构数据单元、集成、桌面/手机、300/500人及Pages测试。
 - [技术决策](docs/DECISIONS.md)、[最新验收](docs/ACCEPTANCE_V0.1.md)、[M0/M1阶段记录](docs/ACCEPTANCE.md)。
 
-未实现原路线后续版本的一键排桌建议、命名版本对比、SVG/PNG平面图、二维码、PWA安装、账号/云同步和逐席分座。生产版已支持静态资源离线重开。
+V0.2已完成场地编辑、规则建议、命名方案/差异和SVG/PNG交付。尚未加入V0.3家庭/伴手礼等婚礼业务、二维码、PWA安装、账号/云同步或逐席分座。规则为启发式建议，场地坐标仅用于示意。
+
+数据兼容：Dexie升级3保留旧记录；新JSON导出协议V2包含布局与命名方案，继续读取V1。复制活动只复制当前状态，历史仍保留在原活动；完整历史迁移请用JSON备份。升级前请下载备份，旧V0.1代码不能写回V2布局数据。
 
 已在Chromium与WebKit的六种桌面/手机/平板配置中验证；实际Safari应用与物理手机尚未单独实测，不能以引擎仿真替代。CI已提供完整质量验证和独立仓库Pages发布工作流；默认关闭自动发布，手动发布或后续开启自动发布的方法见发布准备文档。当前未推送、未部署，无公开生产URL。

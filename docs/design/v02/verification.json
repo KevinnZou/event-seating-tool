@@ -1,0 +1,108 @@
+{
+  "version": "0.2.0",
+  "date": "2026-10-20",
+  "unitTests": 98,
+  "e2eTests": 126,
+  "productionTests": 6,
+  "configurations": [
+    "chromium",
+    "mobile",
+    "android",
+    "webkit",
+    "ios-webkit",
+    "tablet-webkit"
+  ],
+  "pdf": {
+    "pages": 1,
+    "pageSizePt": [842.88, 595.92],
+    "orientation": "landscape",
+    "review": "Poppler rendered and visually checked"
+  },
+  "performance": [
+    {
+      "people": 300,
+      "tables": 30,
+      "importedMs": 326,
+      "searchMs": 36,
+      "configuration": "android"
+    },
+    {
+      "people": 300,
+      "tables": 30,
+      "importedMs": 347,
+      "searchMs": 40,
+      "configuration": "chromium"
+    },
+    {
+      "people": 300,
+      "tables": 30,
+      "importedMs": 366,
+      "searchMs": 37,
+      "configuration": "ios-webkit"
+    },
+    {
+      "people": 300,
+      "tables": 30,
+      "importedMs": 324,
+      "searchMs": 36,
+      "configuration": "mobile"
+    },
+    {
+      "people": 300,
+      "tables": 30,
+      "importedMs": 311,
+      "searchMs": 35,
+      "configuration": "tablet-webkit"
+    },
+    {
+      "people": 300,
+      "tables": 30,
+      "importedMs": 705,
+      "searchMs": 87,
+      "configuration": "webkit"
+    },
+    {
+      "people": 500,
+      "tables": 50,
+      "importedMs": 368,
+      "searchMs": 66,
+      "configuration": "android"
+    },
+    {
+      "people": 500,
+      "tables": 50,
+      "importedMs": 470,
+      "searchMs": 97,
+      "configuration": "chromium"
+    },
+    {
+      "people": 500,
+      "tables": 50,
+      "importedMs": 438,
+      "searchMs": 62,
+      "configuration": "ios-webkit"
+    },
+    {
+      "people": 500,
+      "tables": 50,
+      "importedMs": 381,
+      "searchMs": 55,
+      "configuration": "mobile"
+    },
+    {
+      "people": 500,
+      "tables": 50,
+      "importedMs": 432,
+      "searchMs": 53,
+      "configuration": "tablet-webkit"
+    },
+    {
+      "people": 500,
+      "tables": 50,
+      "importedMs": 505,
+      "searchMs": 54,
+      "configuration": "webkit"
+    }
+  ],
+  "scope": "本机引擎/设备仿真，全部虚构；不等于实际Safari应用或物理手机测试。"
+}
