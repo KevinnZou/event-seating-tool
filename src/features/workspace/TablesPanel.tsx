@@ -18,7 +18,7 @@ export function TablesPanel({
   busy: boolean;
 }) {
   return (
-    <section className="panel">
+    <section className="panel table-management">
       <div className="section-heading">
         <h2>桌位（{snapshot.tables.length}）</h2>
         <button onClick={onAdd}>新增桌位</button>
@@ -26,7 +26,11 @@ export function TablesPanel({
       {snapshot.tables.length === 0 ? (
         <p className="muted">暂无桌位。添加桌号和容量后即可安排宾客。</p>
       ) : (
-        <div className="scroll">
+        <div
+          className="scroll table-management-scroll"
+          tabIndex={0}
+          aria-label="桌位列表，可滚动查看"
+        >
           <table>
             <thead>
               <tr>
@@ -140,6 +144,11 @@ export function TablesPanel({
             </tbody>
           </table>
         </div>
+      )}
+      {snapshot.tables.length > 6 && (
+        <p className="muted table-scroll-hint">
+          全部 {snapshot.tables.length} 张桌位均已列出，可在列表内滚动查看。
+        </p>
       )}
     </section>
   );

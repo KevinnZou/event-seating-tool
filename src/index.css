@@ -264,10 +264,60 @@ main {
   color: #65777d;
 }
 .workspace-grid {
-  display: grid;
-  grid-template-columns: minmax(300px, 0.8fr) minmax(0, 1.6fr);
+  display: flex;
+  flex-direction: column;
   gap: 20px;
-  align-items: start;
+}
+.workspace-grid > .panel {
+  width: 100%;
+}
+.table-management-scroll {
+  max-height: 340px;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.table-management-scroll thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.table-management-scroll td:first-child {
+  width: 15%;
+}
+.table-management-scroll td:nth-child(2) {
+  width: 25%;
+}
+.table-management-scroll td {
+  padding-block: 9px;
+}
+.table-scroll-hint {
+  margin-top: 8px;
+  font-size: 12px;
+}
+.guest-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px;
+  background: #f3f8f7;
+  border-radius: 7px;
+}
+.guest-empty-state h3 {
+  margin-bottom: 4px;
+}
+@media (max-width: 650px) {
+  .table-management-scroll {
+    max-height: 300px;
+  }
+  .guest-empty-state {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px;
+    gap: 12px;
+  }
 }
 .panel {
   background: white;

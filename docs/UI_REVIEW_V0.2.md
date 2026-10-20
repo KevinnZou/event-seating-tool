@@ -50,3 +50,13 @@
 本机Chromium命令使用环境变量`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`指向已安装的测试浏览器：`/Users/kevinnzou/Library/Caches/ms-playwright/chromium-1223/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`。WebKit按仓库现有Playwright配置运行。设置`CAPTURE_REVIEW=1`执行浏览器回归会刷新本轮六张虚构场景截图。
 
 代码提交：`git log --oneline`中的`feat(ux): improve visual seating, view continuity and responsive interactions`；后续文档提交保存本记录、README入口及六配置截图。仅本地提交，未推送或部署。
+
+## 用户截图复查：20桌、零宾客（2026-10-20）
+
+上轮走查漏掉了长桌位列表与空名单并存的状态。固定左右双栏使20桌列表撑高整页，短名单旁留下大片空白；这属于布局问题。
+
+现改为稳定的上下全宽布局：桌位管理在上，全部宾客名单在下。桌位区采用限高原生滚动与固定表头（桌面340px、手机300px），保留全部行与操作，不按人数动态改变布局。空名单显示下一步导入引导；零宾客时不显示无用的名单筛选、批量操作和两桌对调控件。新增第一组后恢复相关工具，人数与数据存储不变。
+
+新增六配置场景覆盖“20桌/0组”→查看末桌→打开导入→添加4人家庭，验证上下排列、面板全宽、桌位区高度、20行完整保留与无页面横向溢出。已有300/500人流程继续验证大量宾客场景。截图位于`output/playwright/list-layout/empty-*.png`，全部虚构。
+
+本次修正质量命令：lint、typecheck、99项单元/集成、138项六配置浏览器回归（3.2分钟）、6项生产子路径/离线/更新测试、build、format:check、privacy:check、git diff --check全部通过。最后补拍六配置的20桌空名单截图，专门对应用户反馈的状态。

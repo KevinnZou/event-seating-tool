@@ -372,3 +372,60 @@ test("UI走查：点选整组安排、容量提示、视图刷新和手机详情
     ),
   ).toBe(true);
 });
+
+test("名单布局：20桌零宾客与少量宾客均无侧栏空白，末桌仍可操作", async ({
+  page,
+}, testInfo) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "新建活动", exact: true }).click();
+  await page.getByLabel("活动名称", { exact: true }).fill("虚构二十桌布局验收");
+  await page.getByLabel("初始桌数", { exact: true }).fill("20");
+  await page.getByRole("button", { name: "保存活动", exact: true }).click();
+  await expect(page.getByTestId("stat-桌位数量")).toHaveText("20");
+  await expect(
+    page.getByRole("heading", { name: "桌位已就绪，接下来添加名单" }),
+  ).toBeVisible();
+  await expect(page.locator(".table-management tbody tr")).toHaveCount(20);
+  const tablePanel = page.locator(".table-management");
+  const guestPanel = page.locator(".guest-management");
+  const tableBounds = (await tablePanel.boundingBox())!;
+  const guestBounds = (await guestPanel.boundingBox())!;
+  expect(Math.abs(tableBounds.width - guestBounds.width)).toBeLessThan(2);
+  expect(guestBounds.y).toBeGreaterThanOrEqual(
+    tableBounds.y + tableBounds.height,
+  );
+  expect(tableBounds.height).toBeLessThan(510);
+  await page
+    .getByRole("button", { name: "查看 20 桌详情", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByRole("button", { name: "完成", exact: true }).click();
+  await page.getByRole("button", { name: "导入已有名单", exact: true }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByRole("button", { name: "关闭", exact: true }).click();
+  if (process.env.CAPTURE_LAYOUT) {
+    await page.locator(".workspace-grid").scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: `output/playwright/list-layout/empty-${testInfo.project.name}.png`,
+    });
+  }
+  await page.getByRole("button", { name: "新增宾客组", exact: true }).click();
+  await page
+    .getByLabel("名称 / 家庭或团队", { exact: true })
+    .fill("虚构四人家庭");
+  await page.getByLabel("人数", { exact: true }).fill("4");
+  await page.getByRole("button", { name: "保存宾客组", exact: true }).click();
+  await expect(page.getByTestId("stat-计划出席")).toHaveText("4");
+  await expect(
+    guestPanel.getByText("虚构四人家庭", { exact: true }),
+  ).toBeVisible();
+  expect((await guestPanel.boundingBox())!.width).toBeCloseTo(
+    tableBounds.width,
+    0,
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+});

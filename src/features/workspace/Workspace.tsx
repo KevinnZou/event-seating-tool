@@ -207,7 +207,7 @@ export function Workspace() {
         </div>
         <p className="muted">撤销记录最多30步，仅本次页面会话有效。</p>
       </div>
-      {view !== "floor" && (
+      {view !== "floor" && result.guests.length > 0 && (
         <>
           <GuestFilters
             snapshot={result}
@@ -256,6 +256,7 @@ export function Workspace() {
             busy={busy}
           />
           <GuestsPanel
+            onImport={() => setImporting(true)}
             filters={filters}
             selected={selected}
             onSelect={setSelected}
@@ -268,7 +269,7 @@ export function Workspace() {
           />
         </div>
       )}
-      {view !== "floor" && (
+      {view !== "floor" && result.guests.length > 0 && (
         <div className="swapbar">
           <label>
             对调桌位

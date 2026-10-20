@@ -10,6 +10,7 @@ import { seatingService } from "../../domain/services";
 export function GuestsPanel({
   snapshot,
   onAdd,
+  onImport,
   onEdit,
   run,
   busy,
@@ -20,6 +21,7 @@ export function GuestsPanel({
 }: {
   snapshot: Snapshot;
   onAdd: () => void;
+  onImport: () => void;
   onEdit: (g: GuestGroupEntity) => void;
   run: (action: () => Promise<unknown>) => Promise<void>;
   busy: boolean;
@@ -38,7 +40,7 @@ export function GuestsPanel({
   const page =
     pagination.key === key ? Math.min(pagination.page, totalPages - 1) : 0;
   return (
-    <section className="panel">
+    <section className="panel guest-management">
       <div className="section-heading">
         <h2>宾客组（{snapshot.guests.length}）</h2>
         <button className="primary" onClick={onAdd}>
@@ -54,9 +56,21 @@ export function GuestsPanel({
         <p className="notice">没有符合筛选的宾客，请调整或清除筛选。</p>
       )}
       {snapshot.guests.length === 0 ? (
-        <p className="muted">
-          暂无宾客。添加一人、家庭或团队，按整组安排桌位。
-        </p>
+        <div className="guest-empty-state">
+          <div>
+            <h3>
+              {snapshot.tables.length
+                ? "桌位已就绪，接下来添加名单"
+                : "从宾客名单开始"}
+            </h3>
+            <p className="muted">
+              已有名单可直接导入，也可以逐组添加一人、家庭或团队。家庭组按实际人数占席。
+            </p>
+          </div>
+          <button disabled={busy} onClick={onImport}>
+            导入已有名单
+          </button>
+        </div>
       ) : (
         <div className="scroll">
           <table className="guest-table">
