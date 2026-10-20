@@ -273,3 +273,36 @@ test("V02 建议预览期间外部变更使旧预览失效", async ({ page, cont
     await other.close();
   }
 });
+
+test("V02 场地演示直达可视化，12张跳号桌与完整区域", async ({
+  page,
+}, testInfo) => {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "试用场地平面图演示", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "虚构场地图演示", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByTestId("stat-桌位数量")).toHaveText("12");
+  await expect(page.getByTestId("stat-计划出席")).toHaveText("122");
+  await expect(page.locator(".plan-table")).toHaveCount(12);
+  await expect(
+    page.getByRole("button", { name: "区域 舞台", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /^平面图 03 桌/ }).click();
+  if (process.env.CAPTURE_QA)
+    await page.screenshot({
+      path: `docs/design/v02/venue-demo-${testInfo.project.name}.png`,
+      fullPage: true,
+    });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.getByRole("link", { name: "导出场地图", exact: true }).click();
+  const pending = page.waitForEvent("download");
+  await page.getByRole("button", { name: "下载PNG场地图" }).click();
+  await (await pending).saveAs(testInfo.outputPath("fictional-venue-demo.png"));
+});

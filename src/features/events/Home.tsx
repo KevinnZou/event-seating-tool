@@ -1,3 +1,4 @@
+import { createVenueDemo } from "./venueDemoService";
 import { errorMessage } from "../../lib/errors";
 import { BackupManager } from "../export/BackupManager";
 import { downloadBackup } from "../export/backupDownloads";
@@ -91,6 +92,17 @@ export function Home() {
         }
       >
         {busy ? "正在处理…" : "试用虚构演示"}
+      </button>
+      <button
+        className="demo"
+        disabled={busy}
+        onClick={() =>
+          void run(async () =>
+            navigate(`/events/${await createVenueDemo()}?view=floor`),
+          )
+        }
+      >
+        试用场地平面图演示
       </button>
       <div className="data-management">
         <button

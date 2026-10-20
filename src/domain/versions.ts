@@ -1,3 +1,4 @@
+import { areaLabels } from "./venueModels";
 import { layoutOf } from "./geometry";
 import { z } from "zod";
 import { attendanceLabels, type Snapshot } from "./models";
@@ -100,7 +101,7 @@ export function compareSnapshots(
     if (beforeLayout.venue[key] !== afterLayout.venue[key])
       add(label, "场地", beforeLayout.venue[key], afterLayout.venue[key]);
   const areaInfo = (area: (typeof beforeLayout.venue.areas)[number]) =>
-    `${area.label} · 位置 ${area.x}, ${area.y} · ${area.width}×${area.height}`;
+    `${areaLabels[area.kind]}：${area.label} · 位置 ${area.x}, ${area.y} · ${area.width}×${area.height}`;
   for (const area of beforeLayout.venue.areas) {
     const next = afterLayout.venue.areas.find((a) => a.id === area.id);
     if (!next) add("删除区域", area.label, areaInfo(area), "已删除");

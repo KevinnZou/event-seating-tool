@@ -28,6 +28,7 @@ test("生产版离线重开保留安排，尚未访问的导出和Excel也可离
   const profile = testInfo.outputPath("offline-profile");
   let context = await engine.launchPersistentContext(profile, options);
   let page = await context.newPage();
+  page.on("dialog", (dialog) => dialog.accept());
   let url: string;
   try {
     await page.goto("http://127.0.0.1:4175/event-seating-tool/");
@@ -39,6 +40,23 @@ test("生产版离线重开保留安排，尚未访问的导出和Excel也可离
       .getByLabel("安排 示例小禾一家 的桌位")
       .selectOption({ label: "03 桌" });
     await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+    await page.getByRole("button", { name: "场地平面图", exact: true }).click();
+    await page.getByRole("button", { name: /^平面图 03 桌/ }).click();
+    await page.getByLabel("选中项X坐标").fill("500");
+    await page.getByLabel("选中项Y坐标").fill("400");
+    await page.getByRole("button", { name: "保存位置", exact: true }).click();
+    await page
+      .getByRole("button", { name: "命名方案与差异", exact: true })
+      .click();
+    await page.getByLabel("新方案名称").fill("虚构离线方案");
+    await page.getByRole("button", { name: "保存当前为命名方案" }).click();
+    await expect(page.getByRole("dialog").getByRole("status")).toHaveText(
+      "命名方案已保存",
+    );
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "完成", exact: true })
+      .click();
     url = page.url();
     await page.evaluate(async () => {
       const keys = await caches.keys();
@@ -66,6 +84,7 @@ test("生产版离线重开保留安排，尚未访问的导出和Excel也可离
     offline: true,
   });
   page = await context.newPage();
+  page.on("dialog", (dialog) => dialog.accept());
   await context.setOffline(true);
   try {
     await page.goto(url);
@@ -104,6 +123,24 @@ test("生产版离线重开保留安排，尚未访问的导出和Excel也可离
     await expect(
       page.getByRole("heading", { name: "导出交付", exact: true }),
     ).toBeVisible();
+    await page.getByRole("link", { name: "← 返回排桌工作区" }).click();
+    await page.getByRole("button", { name: "场地平面图", exact: true }).click();
+    await page.getByRole("button", { name: /^平面图 03 桌/ }).click();
+    await expect(page.getByLabel("选中项X坐标")).toHaveValue("500");
+    await page
+      .getByRole("button", { name: "命名方案与差异", exact: true })
+      .click();
+    await expect(page.getByLabel("重命名方案 虚构离线方案")).toBeVisible();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "完成", exact: true })
+      .click();
+    await page.getByRole("link", { name: "导出场地图", exact: true }).click();
+    const pngWait = page.waitForEvent("download");
+    await page.getByRole("button", { name: "下载PNG场地图" }).click();
+    const png = await pngWait;
+    expect(png.suggestedFilename()).toMatch(/\.png$/);
+    await png.saveAs(testInfo.outputPath(`offline-plan-${browserName}.png`));
   } finally {
     await context.close();
   }

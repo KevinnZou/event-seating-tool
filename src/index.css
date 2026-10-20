@@ -1444,3 +1444,12 @@ h3 {
     width: 100%;
   }
 }
+@page venue-plan {
+  size: A4 landscape;
+  margin: 10mm;
+}
+@media print {
+  .plan-delivery {
+    page: venue-plan;
+  }
+}

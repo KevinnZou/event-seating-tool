@@ -92,6 +92,17 @@ it("重叠有明确提示，自动整理不移动锁定桌，空间不足完整�
     y: 160,
   });
   expect(layoutWarnings(await repo.snapshot(id))).toHaveLength(0);
+  await venue.saveArea(id, {
+    kind: "zone",
+    label: "虚构占满场地",
+    x: 0,
+    y: 0,
+    width: 1200,
+    height: 800,
+  });
+  const crowded = await repo.snapshot(id);
+  await expect(venue.arrange(id)).rejects.toThrow("空间不足");
+  expect(await repo.snapshot(id)).toEqual(crowded);
 });
 it("三种建议只动未排整组，锁定与不参加不触碰，人数守恒且确定性", async () => {
   const s = await repo.snapshot(id);
@@ -312,4 +323,75 @@ it("CRUD输入不可夹带位置/场地字段绕过锁定与布局校验", async
     venue: { width: 400, height: 400, areas: [] },
   } as typeof s.event);
   expect((await repo.snapshot(id)).event.venue!.width).toBe(1200);
+});
+
+it("复制活动保留当前场地且新活动改区域不污染原活动，版本历史不隐式复制", async () => {
+  const s = await repo.snapshot(id);
+  await venue.position(id, "table", s.tables[0].id, { x: 400, y: 400 });
+  await venue.saveArea(id, {
+    kind: "zone",
+    label: "虚构接待区",
+    x: 700,
+    y: 50,
+    width: 200,
+    height: 80,
+  });
+  await versions.save(id, "虚构原活动稿");
+  const before = await repo.snapshot(id),
+    otherId = await crud.copyEvent(id),
+    other = await repo.snapshot(otherId);
+  expect(other.tables[0].position).toEqual(before.tables[0].position);
+  expect(await db.checkpoints.where("eventId").equals(otherId).count()).toBe(0);
+  await venue.position(otherId, "area", other.event.venue!.areas[0].id, {
+    x: 800,
+    y: 100,
+  });
+  expect(await repo.snapshot(id)).toEqual(before);
+  await expect(
+    venue.position(otherId, "table", before.tables[0].id, { x: 300, y: 300 }),
+  ).rejects.toThrow("当前活动");
+});
+
+it("场地图演示是原子创建的全虚构12桌场景，保留同名、待定和未排", async () => {
+  const { createVenueDemo } =
+    await import("../features/events/venueDemoService");
+  const demoId = await createVenueDemo(repo),
+    s = await repo.snapshot(demoId);
+  expect(calculateEventStats(s)).toMatchObject({
+    tableCount: 12,
+    totalRecordedCount: 123,
+    plannedCount: 122,
+    assignedCount: 120,
+    unassignedCount: 2,
+  });
+  expect(s.event.venue!.areas).toHaveLength(3);
+  expect(layoutWarnings(s)).toHaveLength(0);
+  expect(s.guests.filter((g) => g.displayName === "虚构同名来宾")).toHaveLength(
+    2,
+  );
+  expect((await repo.snapshot(id)).event.name).toBe("虚构测试婚宴");
+});
+
+it("方案对比明确显示区域类型变化，不把舞台改入口显示成相同值", () => {
+  const s = fixture();
+  s.event.venue = {
+    width: 1200,
+    height: 800,
+    areas: [
+      {
+        id: crypto.randomUUID(),
+        kind: "stage",
+        label: "虚构区域",
+        x: 700,
+        y: 40,
+        width: 200,
+        height: 80,
+      },
+    ],
+  };
+  const next = structuredClone(s);
+  next.event.venue!.areas[0].kind = "entrance";
+  const change = compareSnapshots(s, next).find((c) => c.kind === "区域变化")!;
+  expect(change.before).toContain("舞台");
+  expect(change.after).toContain("入口");
 });
