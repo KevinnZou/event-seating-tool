@@ -2,6 +2,8 @@
 
 中文圆桌活动排桌工具，支持婚礼、宴会、年会。一套 React + TypeScript + Vite 前端，无账号、后端、云数据库或 LLM API。数据只保存在当前浏览器的 IndexedDB（Dexie），所有内置演示与测试数据均虚构。
 
+在线使用：[智能排桌助手](https://kevinnzou.github.io/event-seating-tool/)。首次公开版本V0.2.0的部署提交与验收结果见[发布记录](docs/release/V0.2.0.md)。
+
 ## 启动
 
 Node 24 LTS、npm 11；已提供 `.nvmrc` 与锁文件。
@@ -105,6 +107,6 @@ V0.2已完成场地编辑、规则建议、命名方案/差异和SVG/PNG交付�
 
 数据兼容：Dexie升级4保留旧记录；新JSON导出协议V2包含布局与命名方案，继续读取V1。复制活动只复制当前状态，历史仍保留在原活动；完整历史迁移请用JSON备份。升级前请下载备份，旧V0.1代码不能写回V2布局数据。
 
-已在Chromium与WebKit的六种桌面/手机/平板配置中验证；实际Safari应用与物理手机尚未单独实测，不能以引擎仿真替代。CI已提供完整质量验证和独立仓库Pages发布工作流；默认关闭自动发布，手动发布或后续开启自动发布的方法见发布准备文档。站点目标：https://kevinnzou.github.io/event-seating-tool/ 。实际发布状态及首次线上验收见[发布记录](docs/release/V0.2.0.md)。
+已在Chromium与WebKit的六种桌面/手机/平板配置中验证；实际Safari应用与物理手机尚未单独实测，不能以引擎仿真替代。CI已提供完整质量验证和独立仓库Pages发布工作流；默认关闭自动发布，手动发布或后续开启自动发布的方法见发布准备文档。V0.2.0已发布到[GitHub Pages](https://kevinnzou.github.io/event-seating-tool/)，正式网址三种浏览器配置验收通过，详见[发布记录](docs/release/V0.2.0.md)。
 
 本地预览与线上地址使用各自的浏览器存储。迁移活动请先在原地址下载完整JSON备份，再在新地址导入；部署不会上传或自动迁移本机名单。
