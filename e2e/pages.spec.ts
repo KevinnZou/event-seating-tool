@@ -149,7 +149,7 @@ test("生产版离线重开保留安排，尚未访问的导出和Excel也可离
 
 test("应用更新先等待确认，刷新后本机活动不丢失", async ({ page }) => {
   const { readFile, writeFile } = await import("node:fs/promises");
-  const original = await readFile("dist/sw.js", "utf8");
+  const original = await readFile("tmp/pages-preview/sw.js", "utf8");
   try {
     page.on("dialog", (dialog) => dialog.accept());
     await page.goto("./");
@@ -163,7 +163,7 @@ test("应用更新先等待确认，刷新后本机活动不丢失", async ({ pa
     await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
     const url = page.url();
     await writeFile(
-      "dist/sw.js",
+      "tmp/pages-preview/sw.js",
       original.replace(/"version":"[^"]+"/, '"version":"acceptance-update"'),
     );
     await page.evaluate(async () => {
@@ -184,7 +184,7 @@ test("应用更新先等待确认，刷新后本机活动不丢失", async ({ pa
     ).toBeDisabled();
     await expect(refresh).not.toBeVisible();
   } finally {
-    await writeFile("dist/sw.js", original);
+    await writeFile("tmp/pages-preview/sw.js", original);
   }
 });
 
@@ -338,4 +338,23 @@ test("已保存但未下载备份的名单刷新不触发离页拦截", async ({
   await second.reload();
   await expect(second.getByTestId("stat-已安排人数")).toHaveText("4");
   expect(dialogs).toEqual([]);
+});
+
+test("入口脚本下载失败仍显示独立修复入口并保留原活动路由", async ({ page }) => {
+  await page.route("**/assets/index-*.js", (route) => route.abort());
+  const hash = "#/events/00000000-0000-4000-8000-000000000042?view=floor";
+  await page.goto(`./${hash}`);
+  await expect(page.getByRole("status")).toHaveText("正在载入应用资源…");
+  const repair = page.getByRole("link", { name: "修复页面加载", exact: true });
+  await expect(repair).toHaveAttribute(
+    "href",
+    new URL(`./recover.html${hash}`, page.url()).href,
+  );
+  await repair.click();
+  await expect(
+    page.getByRole("heading", { name: "修复页面加载", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "返回应用", exact: true }),
+  ).toHaveAttribute("href", new URL(`./${hash}`, page.url()).href);
 });

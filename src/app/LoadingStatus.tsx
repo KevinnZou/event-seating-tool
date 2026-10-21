@@ -18,7 +18,9 @@ export function LoadingStatus({ text }: { text: string }) {
           </p>
           <a
             className="button"
-            href={new URL("recover.html", document.baseURI).href}
+            href={
+              new URL(`recover.html${location.hash}`, document.baseURI).href
+            }
           >
             修复页面加载
           </a>

@@ -10,15 +10,17 @@ export class ErrorBoundary extends Component<
   render() {
     return this.state.failed ? (
       <main>
-        <h1>无法加载本地数据</h1>
+        <h1>应用未能启动</h1>
         <p role="alert">
-          应用文件加载失败，或本地存储暂时不可用。可重新加载；反复失败时使用“修复页面加载”。请勿清理站点数据。
+          应用文件可能已更新或下载失败。请使用“修复页面加载”获取完整版本；该操作不会删除本机活动。请勿清理站点数据。
         </p>
         <div className="actions">
           <button onClick={() => location.reload()}>重新加载</button>
           <a
             className="button"
-            href={new URL("recover.html", document.baseURI).href}
+            href={
+              new URL(`recover.html${location.hash}`, document.baseURI).href
+            }
           >
             修复页面加载
           </a>

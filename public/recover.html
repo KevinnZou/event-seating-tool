@@ -83,6 +83,9 @@
     <script type="module">
       const button = document.getElementById("repair");
       const status = document.getElementById("status");
+      const destination = new URL("./", location.href);
+      destination.hash = location.hash;
+      document.querySelector("a").href = destination.href;
       button.addEventListener("click", async () => {
         button.disabled = true;
         const timer = setTimeout(() => {
@@ -127,7 +130,7 @@
             });
           }
           clearTimeout(timer);
-          location.replace(new URL("./", location.href));
+          location.replace(destination);
         } catch (error) {
           clearTimeout(timer);
           status.textContent =

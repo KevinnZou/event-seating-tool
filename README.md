@@ -52,7 +52,7 @@ V0.2整体验收：[docs/ACCEPTANCE_V0.2.md](docs/ACCEPTANCE_V0.2.md)。V0.1历�
 
 生产构建会生成项目路径隔离的Service Worker。首次联网打开并看到“离线资源已就绪”后，可关闭浏览器再离线重开；名单、移桌、Excel导出及JSON备份均可在本机完成。缓存仅含应用静态资源，业务数据仍只存IndexedDB，不构成另一份名单数据库。
 
-新版会等待你先备份并确认刷新，不自动中断排桌；刷新结束当前撤销历史，已保存名单保留。开发模式不注册离线缓存。用 `npm run build && npm run preview` 验证离线；不同端口不共享本机数据，请用JSON迁移。
+新版会等待你先备份并确认刷新，不自动中断排桌；刷新结束当前撤销历史，已保存名单保留。开发模式不注册离线缓存。用 `npm run build && npm run preview` 验证离线（默认4176）；预览启动时复制完整构建为固定快照，后续build不影响正在使用的页面。更新预览时停止并重启preview，再使用页面更新提示或recover.html切换；测试修改的Service Worker使用独立副本。不同端口不共享本机数据，请用JSON迁移。
 
 ## 备份与恢复
 
@@ -83,9 +83,10 @@ npm run privacy:check # 先 build
 npx playwright install chromium
 npm run test:e2e
 npm run test:pages
+npm run test:preview
 ```
 
-`test:pages`包含生产构建及 `/event-seating-tool/` 子路径、Hash深链接刷新验收。测试自行启停测试服务器。
+`test:pages`包含生产构建及 `/event-seating-tool/` 子路径、Hash深链接刷新验收。测试自行启停测试服务器。`test:preview`验证构建目录被替换后，运行中的预览仍保留完整旧版资源。
 
 本次使用已有Chromium缓存执行浏览器测试；如需使用已有可执行文件：`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="/绝对路径/Chromium" npm run test:e2e`，Pages测试同理。CI默认安装锁定Playwright对应的Chromium，不需要密钥。`CAPTURE_QA=1`可额外生成虚构数据截图到 `docs/design/v01/`。
 

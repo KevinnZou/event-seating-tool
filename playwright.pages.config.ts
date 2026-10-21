@@ -22,7 +22,7 @@ export default defineConfig({
   },
   webServer: {
     command:
-      "npm run preview -- --host 127.0.0.1 --port 4175 --base /event-seating-tool/",
+      "node scripts/prepare-pages-preview.mjs && npx vite preview --host 127.0.0.1 --port 4175 --strictPort --base /event-seating-tool/ --outDir tmp/pages-preview",
     url: "http://127.0.0.1:4175/event-seating-tool/",
     reuseExistingServer: false,
   },

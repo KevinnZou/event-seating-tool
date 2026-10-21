@@ -6,7 +6,24 @@
     <title>智能排桌助手</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main
+        style="
+          max-width: 620px;
+          margin: 8vh auto;
+          padding: 28px;
+          font: 16px/1.7 sans-serif;
+        "
+      >
+        <h1>智能排桌助手</h1>
+        <p role="status">正在载入应用资源…</p>
+        <p>若长时间停留在此处，请修复应用加载。本机活动不会被删除。</p>
+        <a id="startup-recovery" href="./recover.html">修复页面加载</a>
+      </main>
+    </div>
+    <script>
+      document.getElementById("startup-recovery").hash = location.hash;
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
