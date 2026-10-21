@@ -387,6 +387,11 @@ test("家庭拆成三组实时守恒、移除份额、刷新与撤销重做", as
     page.getByRole("heading", { name: "宾客组（6）" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "重做", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "宾客组（8）" }),
+  ).toBeVisible();
+  for (const name of ["虚构三分甲", "虚构三分乙", "虚构三分丙"])
+    await expect(page.getByText(name, { exact: true })).toBeVisible();
   await page.reload();
   for (const name of ["虚构三分甲", "虚构三分乙", "虚构三分丙"])
     await expect(page.getByText(name, { exact: true })).toBeVisible();

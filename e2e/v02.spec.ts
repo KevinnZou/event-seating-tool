@@ -580,6 +580,18 @@ test("场地图名单总览：家庭人数、同名独立、换桌同步与刷�
   await expect(page.getByLabel("选中项X坐标")).toHaveValue(x);
   await expect(page.getByLabel("选中项Y坐标")).toHaveValue(y);
   await expect(page.getByTestId("stat-计划出席")).toHaveText("11");
+  const toggle = page.getByRole("checkbox", {
+    name: "显示宾客名单",
+    exact: true,
+  });
+  await toggle.press("Space");
+  await expect(toggle).toBeChecked();
+  await expect(roster.getByRole("listitem")).toHaveCount(3);
+  await toggle.press("Space");
+  await expect(toggle).not.toBeChecked();
+  await expect(page.getByRole("region", { name: /桌宾客名单$/ })).toHaveCount(
+    0,
+  );
 });
 
 test("名单视图拖动与键盘仍按真实坐标移动，名单滚动不移动桌", async ({

@@ -2,7 +2,7 @@ import { LayoutDialog } from "./LayoutDialog";
 import { tableChoices } from "../seating/tableChoices";
 import { Link, useSearchParams } from "react-router-dom";
 import { ROSTER_COORDINATE_SCALE } from "./planPresentation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -82,6 +82,12 @@ export function FloorPlan({
 }) {
   const [params, setParams] = useSearchParams();
   const showRoster = params.get("roster") === "1";
+  const rosterCheckbox = useRef<HTMLInputElement>(null);
+  // Native click feedback stays immediate while URL navigation commits.
+  // Sync Back/Forward without replacing the focused checkbox.
+  useLayoutEffect(() => {
+    if (rosterCheckbox.current) rosterCheckbox.current.checked = showRoster;
+  }, [showRoster]);
   const [organizing, setOrganizing] = useState(false);
   const [snap, setSnap] = useState(true);
   const [selection, setSelection] = useState<PlanSelection | null>(null),
@@ -208,7 +214,8 @@ export function FloorPlan({
           <label className="check plan-roster-toggle">
             <input
               type="checkbox"
-              checked={showRoster}
+              ref={rosterCheckbox}
+              defaultChecked={showRoster}
               onChange={(event) => {
                 const enabled = event.target.checked;
                 setParams(
