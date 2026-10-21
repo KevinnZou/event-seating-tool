@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { openExtra } from "./interactions.js";
 import { test, expect } from "@playwright/test";
 test("生产产物子路径和Hash深链接刷新可用", async ({ page }) => {
@@ -44,124 +47,135 @@ test("生产版离线重开保留安排，尚未访问的导出和Excel也可离
         ? process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
         : undefined,
   };
-  const profile = testInfo.outputPath("offline-profile");
-  let context = await engine.launchPersistentContext(profile, options);
-  let page = await context.newPage();
-  page.on("dialog", (dialog) => dialog.accept());
-  let url: string;
+  // Linux WebKit parses its CLI using the runner locale; keep the profile path ASCII.
+  const profile = await mkdtemp(join(tmpdir(), "event-seating-offline-"));
   try {
-    await page.goto("http://127.0.0.1:4175/event-seating-tool/");
-    await expect(
-      page.getByRole("status").filter({ hasText: "离线资源已就绪" }),
-    ).toBeVisible();
-    await page.getByRole("button", { name: "试用虚构演示" }).click();
-    await page
-      .getByLabel("安排 示例小禾一家 的桌位")
-      .selectOption({ label: "03 桌" });
-    await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
-    await page.getByRole("button", { name: "场地平面图", exact: true }).click();
-    await page.getByRole("button", { name: /^平面图 03 桌/ }).click();
-    await page.getByLabel("选中项X坐标").fill("500");
-    await page.getByLabel("选中项Y坐标").fill("400");
-    await page.getByRole("button", { name: "保存位置", exact: true }).click();
-    await openExtra(page, "命名方案与差异");
-    await page.getByLabel("新方案名称").fill("虚构离线方案");
-    await page.getByRole("button", { name: "保存当前为命名方案" }).click();
-    await expect(page.getByRole("dialog").getByRole("status")).toHaveText(
-      "命名方案已保存",
-    );
-    await page
-      .getByRole("dialog")
-      .getByRole("button", { name: "完成", exact: true })
-      .click();
-    url = page.url();
-    await page.evaluate(async () => {
-      const keys = await caches.keys();
-      const resources = (
-        await Promise.all(
-          keys.map(async (key) =>
-            (await (await caches.open(key)).keys()).map(
-              (request) => request.url,
-            ),
-          ),
-        )
-      ).flat();
-      if (
-        resources.some(
-          (resource) => !/\/(index\.html|assets\/[^/]+)$/.test(resource),
-        )
-      )
-        throw new Error("缓存含非静态资源");
-    });
-  } finally {
-    await context.close();
-  }
-  context = await engine.launchPersistentContext(profile, {
-    ...options,
-    offline: true,
-  });
-  page = await context.newPage();
-  page.on("dialog", (dialog) => dialog.accept());
-  await context.setOffline(true);
-  try {
-    await page.goto(url);
-    await expect(page.getByTestId("stat-计划出席")).toHaveText("11");
-    await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
-    // Browser online hints vary across persistent-context launches; prove the network is unavailable.
-    expect(
+    let context = await engine.launchPersistentContext(profile, options);
+    let page = await context.newPage();
+    page.on("dialog", (dialog) => dialog.accept());
+    let url: string;
+    try {
+      await page.goto("http://127.0.0.1:4175/event-seating-tool/");
+      await expect(
+        page.getByRole("status").filter({ hasText: "离线资源已就绪" }),
+      ).toBeVisible();
+      await page.getByRole("button", { name: "试用虚构演示" }).click();
+      await page
+        .getByLabel("安排 示例小禾一家 的桌位")
+        .selectOption({ label: "03 桌" });
+      await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+      await page
+        .getByRole("button", { name: "场地平面图", exact: true })
+        .click();
+      await page.getByRole("button", { name: /^平面图 03 桌/ }).click();
+      await page.getByLabel("选中项X坐标").fill("500");
+      await page.getByLabel("选中项Y坐标").fill("400");
+      await page.getByRole("button", { name: "保存位置", exact: true }).click();
+      await openExtra(page, "命名方案与差异");
+      await page.getByLabel("新方案名称").fill("虚构离线方案");
+      await page.getByRole("button", { name: "保存当前为命名方案" }).click();
+      await expect(page.getByRole("dialog").getByRole("status")).toHaveText(
+        "命名方案已保存",
+      );
+      await page
+        .getByRole("dialog")
+        .getByRole("button", { name: "完成", exact: true })
+        .click();
+      url = page.url();
       await page.evaluate(async () => {
-        try {
-          await fetch(`network-check-${crypto.randomUUID()}`);
-          return false;
-        } catch {
-          return true;
-        }
-      }),
-    ).toBe(true);
-    await expect(
-      page.getByRole("button", { name: "场地平面图", exact: true }),
-    ).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: "名单与桌位", exact: true }).click();
-    await page
-      .getByLabel("安排 示例小禾一家 的桌位")
-      .selectOption({ label: "66 桌" });
-    await page.getByRole("link", { name: "导出交付", exact: true }).click();
-    const download = page.waitForEvent("download");
-    await page.getByRole("button", { name: "下载Excel工作簿" }).click();
-    expect((await download).suggestedFilename()).toMatch(/\.xlsx$/);
-    await page
-      .getByRole("button", { name: "完整备份与恢复", exact: true })
-      .click();
-    const backup = page.waitForEvent("download");
-    await page
-      .getByRole("button", { name: "下载本活动完整备份", exact: true })
-      .click();
-    expect((await backup).suggestedFilename()).toMatch(/\.json$/);
-    await page
-      .getByRole("button", { name: "关闭备份与恢复", exact: true })
-      .click();
-    await page.reload();
-    await expect(
-      page.getByRole("heading", { name: "导出交付", exact: true }),
-    ).toBeVisible();
-    await page.getByRole("link", { name: "← 返回排桌工作区" }).click();
-    await page.getByRole("button", { name: "场地平面图", exact: true }).click();
-    await page.getByRole("button", { name: /^平面图 03 桌/ }).click();
-    await expect(page.getByLabel("选中项X坐标")).toHaveValue("500");
-    await openExtra(page, "命名方案与差异");
-    await expect(page.getByLabel("重命名方案 虚构离线方案")).toBeVisible();
-    await page
-      .getByRole("dialog")
-      .getByRole("button", { name: "完成", exact: true })
-      .click();
-    await page.getByRole("link", { name: "导出场地图", exact: true }).click();
-    const pngWait = page.waitForEvent("download");
-    await page.getByRole("button", { name: "下载PNG场地图" }).click();
-    const png = await pngWait;
-    expect(png.suggestedFilename()).toMatch(/\.png$/);
-    await png.saveAs(testInfo.outputPath(`offline-plan-${browserName}.png`));
+        const keys = await caches.keys();
+        const resources = (
+          await Promise.all(
+            keys.map(async (key) =>
+              (await (await caches.open(key)).keys()).map(
+                (request) => request.url,
+              ),
+            ),
+          )
+        ).flat();
+        if (
+          resources.some(
+            (resource) => !/\/(index\.html|assets\/[^/]+)$/.test(resource),
+          )
+        )
+          throw new Error("缓存含非静态资源");
+      });
+    } finally {
+      await context.close();
+    }
+    context = await engine.launchPersistentContext(profile, {
+      ...options,
+      offline: true,
+    });
+    page = await context.newPage();
+    page.on("dialog", (dialog) => dialog.accept());
+    await context.setOffline(true);
+    try {
+      await page.goto(url);
+      await expect(page.getByTestId("stat-计划出席")).toHaveText("11");
+      await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+      // Browser online hints vary across persistent-context launches; prove the network is unavailable.
+      expect(
+        await page.evaluate(async () => {
+          try {
+            await fetch(`network-check-${crypto.randomUUID()}`);
+            return false;
+          } catch {
+            return true;
+          }
+        }),
+      ).toBe(true);
+      await expect(
+        page.getByRole("button", { name: "场地平面图", exact: true }),
+      ).toHaveAttribute("aria-pressed", "true");
+      await page
+        .getByRole("button", { name: "名单与桌位", exact: true })
+        .click();
+      await page
+        .getByLabel("安排 示例小禾一家 的桌位")
+        .selectOption({ label: "66 桌" });
+      await page.getByRole("link", { name: "导出交付", exact: true }).click();
+      const download = page.waitForEvent("download");
+      await page.getByRole("button", { name: "下载Excel工作簿" }).click();
+      expect((await download).suggestedFilename()).toMatch(/\.xlsx$/);
+      await page
+        .getByRole("button", { name: "完整备份与恢复", exact: true })
+        .click();
+      const backup = page.waitForEvent("download");
+      await page
+        .getByRole("button", { name: "下载本活动完整备份", exact: true })
+        .click();
+      expect((await backup).suggestedFilename()).toMatch(/\.json$/);
+      await page
+        .getByRole("button", { name: "关闭备份与恢复", exact: true })
+        .click();
+      await page.reload();
+      await expect(
+        page.getByRole("heading", { name: "导出交付", exact: true }),
+      ).toBeVisible();
+      await page.getByRole("link", { name: "← 返回排桌工作区" }).click();
+      await page
+        .getByRole("button", { name: "场地平面图", exact: true })
+        .click();
+      await page.getByRole("button", { name: /^平面图 03 桌/ }).click();
+      await expect(page.getByLabel("选中项X坐标")).toHaveValue("500");
+      await openExtra(page, "命名方案与差异");
+      await expect(page.getByLabel("重命名方案 虚构离线方案")).toBeVisible();
+      await page
+        .getByRole("dialog")
+        .getByRole("button", { name: "完成", exact: true })
+        .click();
+      await page.getByRole("link", { name: "导出场地图", exact: true }).click();
+      const pngWait = page.waitForEvent("download");
+      await page.getByRole("button", { name: "下载PNG场地图" }).click();
+      const png = await pngWait;
+      expect(png.suggestedFilename()).toMatch(/\.png$/);
+      await png.saveAs(testInfo.outputPath(`offline-plan-${browserName}.png`));
+    } finally {
+      await context.close();
+    }
   } finally {
-    await context.close();
+    await rm(profile, { recursive: true, force: true });
   }
 });
 
