@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-按终端给出的地址打开；端口被占用时 Vite 会自动递增。生产预览：`npm run build && npm run preview`。当前使用相对 base + HashRouter，适配 GitHub Pages 子路径；未配置任何远程、未推送或部署。
+按终端给出的地址打开；端口被占用时 Vite 会自动递增。生产预览：`npm run build && npm run preview`。当前使用相对 base + HashRouter，适配 GitHub Pages 子路径；发布目标为独立仓库 `KevinnZou/event-seating-tool`，站点入口见下方发布说明。
 
 V0.2整体验收：[docs/ACCEPTANCE_V0.2.md](docs/ACCEPTANCE_V0.2.md)。V0.1历史记录：[docs/REVIEW_READY.md](docs/REVIEW_READY.md)。发布准备：[docs/release/PUBLISH.md](docs/release/PUBLISH.md)。
 
@@ -88,20 +88,22 @@ npm run test:preview
 
 `test:pages`包含生产构建及 `/event-seating-tool/` 子路径、Hash深链接刷新验收。测试自行启停测试服务器。`test:preview`验证构建目录被替换后，运行中的预览仍保留完整旧版资源。
 
-本次使用已有Chromium缓存执行浏览器测试；如需使用已有可执行文件：`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="/绝对路径/Chromium" npm run test:e2e`，Pages测试同理。CI默认安装锁定Playwright对应的Chromium，不需要密钥。`CAPTURE_QA=1`可额外生成虚构数据截图到 `docs/design/v01/`。
+本次使用已有Chromium缓存执行浏览器测试；如需使用已有可执行文件：`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="/绝对路径/Chromium" npm run test:e2e`，Pages测试同理。CI默认安装锁定Playwright对应的Chromium与WebKit，不需要密钥。`CAPTURE_QA=1`可额外生成虚构数据截图到 `docs/design/v01/`。
 
 ## 目录与验收
 
 - `src/app`：路由、存储探测、错误边界、标签页提醒。
-- `src/db`：Dexie schema与repository；数据库schema2兼容迁移schema1。
+- `src/db`：Dexie schema与repository；数据库schema4兼容迁移schema1/2/3。
 - `src/domain`：实体/Zod、纯函数、CRUD/批量服务、撤销与检查点。
 - `src/features`：活动、排桌、导入、校验、交付与备份界面。
 - `src/lib`：文件名/下载/错误信息。
 - `src/tests` / `e2e`：虚构数据单元、集成、桌面/手机、300/500人及Pages测试。
-- [技术决策](docs/DECISIONS.md)、[最新验收](docs/ACCEPTANCE_V0.1.md)、[M0/M1阶段记录](docs/ACCEPTANCE.md)。
+- [技术决策](docs/DECISIONS.md)、[V0.2验收](docs/ACCEPTANCE_V0.2.md)、[名单总览验收](docs/FLOORPLAN_ROSTERS.md)、[M0/M1阶段记录](docs/ACCEPTANCE.md)。
 
 V0.2已完成场地编辑、规则建议、命名方案/差异和SVG/PNG交付。尚未加入V0.3家庭/伴手礼等婚礼业务、二维码、PWA安装、账号/云同步或逐席分座。规则为启发式建议，场地坐标仅用于示意。
 
-数据兼容：Dexie升级3保留旧记录；新JSON导出协议V2包含布局与命名方案，继续读取V1。复制活动只复制当前状态，历史仍保留在原活动；完整历史迁移请用JSON备份。升级前请下载备份，旧V0.1代码不能写回V2布局数据。
+数据兼容：Dexie升级4保留旧记录；新JSON导出协议V2包含布局与命名方案，继续读取V1。复制活动只复制当前状态，历史仍保留在原活动；完整历史迁移请用JSON备份。升级前请下载备份，旧V0.1代码不能写回V2布局数据。
 
-已在Chromium与WebKit的六种桌面/手机/平板配置中验证；实际Safari应用与物理手机尚未单独实测，不能以引擎仿真替代。CI已提供完整质量验证和独立仓库Pages发布工作流；默认关闭自动发布，手动发布或后续开启自动发布的方法见发布准备文档。当前未推送、未部署，无公开生产URL。
+已在Chromium与WebKit的六种桌面/手机/平板配置中验证；实际Safari应用与物理手机尚未单独实测，不能以引擎仿真替代。CI已提供完整质量验证和独立仓库Pages发布工作流；默认关闭自动发布，手动发布或后续开启自动发布的方法见发布准备文档。站点目标：https://kevinnzou.github.io/event-seating-tool/ 。实际发布状态及首次线上验收见[发布记录](docs/release/V0.2.0.md)。
+
+本地预览与线上地址使用各自的浏览器存储。迁移活动请先在原地址下载完整JSON备份，再在新地址导入；部署不会上传或自动迁移本机名单。
