@@ -1,5 +1,5 @@
 import { errorMessage } from "../../lib/errors";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../../db/database";
 import type { Snapshot } from "../../domain/models";
@@ -28,14 +28,6 @@ export function DataSafetyPanel({
   );
   const needsBackup =
     !last || last.value < snapshot.event.updatedAt || Boolean(historyDirty);
-  useEffect(() => {
-    if (!needsBackup || !snapshot.guests.length) return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-    };
-    addEventListener("beforeunload", handler);
-    return () => removeEventListener("beforeunload", handler);
-  }, [needsBackup, snapshot.guests.length]);
   async function run(a: () => Promise<unknown>, success: string) {
     setBusy(true);
     setError("");
@@ -58,9 +50,9 @@ export function DataSafetyPanel({
       </div>
       <p className={needsBackup ? "notice" : "muted"}>
         {needsBackup
-          ? "当前名单或方案/检查点变更尚未备份，建议现在下载。"
+          ? "当前变更已保存到本机，尚未备份到文件，建议现在下载。"
           : "最近下载时间覆盖当前活动版本。"}{" "}
-        本机检查点与IndexedDB均可能随站点数据清理而丢失。
+        刷新后仍可继续排桌；本机检查点与IndexedDB均可能随站点数据清理而丢失。
       </p>
       <p className="muted">
         最近触发下载：

@@ -299,3 +299,43 @@ test("生产版连续刷新与独立加载修复入口均保留宾客安排", as
   await page.reload();
   await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
 });
+
+test("已保存但未下载备份的名单刷新不触发离页拦截", async ({
+  page,
+  context,
+}) => {
+  const dialogs: string[] = [];
+  page.on("dialog", async (dialog) => {
+    dialogs.push(dialog.type());
+    await dialog.accept(); // Record unexpected dialogs so the regression fails instead of hanging.
+  });
+  await page.goto("./");
+  await page.getByRole("button", { name: "试用虚构演示", exact: true }).click();
+  await page
+    .getByLabel("安排 示例小禾一家 的桌位")
+    .selectOption({ label: "03 桌" });
+  await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+  await expect(page.getByText("尚未备份", { exact: false })).toBeVisible();
+  const url = page.url();
+  for (let i = 0; i < 3; i++) {
+    await page.getByRole("button", { name: "场地平面图", exact: true }).click();
+    await page.reload();
+    await expect(page.getByTestId("stat-计划出席")).toHaveText("11");
+    await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
+    await expect(
+      page.getByRole("button", { name: "场地平面图", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByText("尚未备份", { exact: false })).toBeVisible();
+    expect(dialogs, "持久化完成后不能因未下载外部备份拦截刷新").toEqual([]);
+  }
+  const second = await context.newPage();
+  second.on("dialog", async (dialog) => {
+    dialogs.push(dialog.type());
+    await dialog.accept();
+  });
+  await second.goto(url);
+  await expect(second.getByTestId("stat-已安排人数")).toHaveText("4");
+  await second.reload();
+  await expect(second.getByTestId("stat-已安排人数")).toHaveText("4");
+  expect(dialogs).toEqual([]);
+});
