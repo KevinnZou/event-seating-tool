@@ -26,6 +26,7 @@ try {
     preview: { host: values.host, port: Number(values.port), strictPort: true },
   });
   server.printUrls();
+  process.send?.({ type: "preview-ready", url: server.resolvedUrls.local[0] });
   console.log(
     "固定构建快照：后续 build 不影响本次预览；更新预览需重启此命令。",
   );
