@@ -84,9 +84,10 @@ npx playwright install chromium
 npm run test:e2e
 npm run test:pages
 npm run test:preview
+npm run test:live # 公网站点部署后手动运行
 ```
 
-`test:pages`包含生产构建及 `/event-seating-tool/` 子路径、Hash深链接刷新验收。测试自行启停测试服务器。`test:preview`验证构建目录被替换后，运行中的预览仍保留完整旧版资源。
+`test:pages`包含生产构建及 `/event-seating-tool/` 子路径、Hash深链接刷新验收。测试自行启停测试服务器。`test:preview`验证构建目录被替换后，运行中的预览仍保留完整旧版资源。`test:live`仅在部署后验证正式公网地址，使用独立浏览器中的虚构数据，不接触用户已有活动。
 
 本次使用已有Chromium缓存执行浏览器测试；如需使用已有可执行文件：`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="/绝对路径/Chromium" npm run test:e2e`，Pages测试同理。CI默认安装锁定Playwright对应的Chromium与WebKit，不需要密钥。`CAPTURE_QA=1`可额外生成虚构数据截图到 `docs/design/v01/`。
 
