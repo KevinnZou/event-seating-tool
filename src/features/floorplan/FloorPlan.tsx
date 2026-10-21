@@ -1,6 +1,7 @@
 import { LayoutDialog } from "./LayoutDialog";
 import { tableChoices } from "../seating/tableChoices";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { ROSTER_COORDINATE_SCALE } from "./planPresentation";
 import { useEffect, useRef, useState } from "react";
 import {
   DndContext,
@@ -79,6 +80,8 @@ export function FloorPlan({
   onAddTable: () => void;
   onAddGuest: () => void;
 }) {
+  const [params, setParams] = useSearchParams();
+  const showRoster = params.get("roster") === "1";
   const [organizing, setOrganizing] = useState(false);
   const [snap, setSnap] = useState(true);
   const [selection, setSelection] = useState<PlanSelection | null>(null),
@@ -109,8 +112,15 @@ export function FloorPlan({
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
   const { venue } = layoutOf(snapshot),
-    fit = Math.min(1, Math.max(0.1, (width - 16) / venue.width)),
-    baseScale = Math.max(0.45, fit),
+    fit = Math.min(
+      1,
+      Math.max(
+        0.1,
+        (width - 16) /
+          (venue.width * (showRoster ? ROSTER_COORDINATE_SCALE : 1)),
+      ),
+    ),
+    baseScale = Math.max(showRoster ? 0.8 : 0.45, fit),
     scale = baseScale * zoom;
   const pending = snapshot.guests.filter(
     (g) => !g.tableId && g.attendance !== "declined",
@@ -195,6 +205,26 @@ export function FloorPlan({
           >
             ＋
           </button>
+          <label className="check plan-roster-toggle">
+            <input
+              type="checkbox"
+              checked={showRoster}
+              onChange={(event) => {
+                const enabled = event.target.checked;
+                setParams(
+                  (current) => {
+                    const next = new URLSearchParams(current);
+                    if (enabled) next.set("roster", "1");
+                    else next.delete("roster");
+                    return next;
+                  },
+                  { replace: true },
+                );
+                setZoom(1);
+              }}
+            />
+            显示宾客名单
+          </label>
           <button onClick={() => setZoom(fit / baseScale)}>适应画布</button>
         </div>
       </div>
@@ -203,6 +233,11 @@ export function FloorPlan({
           ? "拖动圆桌或区域调整位置。选中圆桌后可用方向键每次移动10，或在详情填写坐标；锁定桌不可移动，过道及缓冲区禁止放桌。"
           : "点击未安排宾客选择目标桌，或将整组拖入圆桌。点击圆桌查看名单和换桌菜单。"}
       </p>
+      {showRoster && (
+        <p className="muted">
+          名单视图已放大显示间距，实际桌位不变。可滚动画布或缩放查看各桌；每桌名单较多时可在名单内滚动。
+        </p>
+      )}
       <DndContext
         sensors={sensors}
         onDragStart={({ active }) =>
@@ -331,6 +366,7 @@ export function FloorPlan({
               layoutMode={layoutMode}
               busy={busy}
               scale={scale}
+              showRoster={showRoster}
               snapStep={snap ? 20 : 0}
               onPosition={(selected, point) =>
                 run(() =>

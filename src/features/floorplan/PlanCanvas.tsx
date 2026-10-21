@@ -1,97 +1,11 @@
+import { RoundTable } from "./RoundTable";
+import { planDragPoint, ROSTER_COORDINATE_SCALE } from "./planPresentation";
 import { snapPoint } from "../../domain/layoutPlanner";
-import { useRef, useState, type PointerEvent } from "react";
-import { useDroppable } from "@dnd-kit/core";
+import { useLayoutEffect, useRef, useState, type PointerEvent } from "react";
 import type { Snapshot } from "../../domain/models";
-import { occupancy } from "../../domain/calculations";
-import { clampPoint, layoutOf, TABLE_RADIUS } from "../../domain/geometry";
+import { clampPoint, layoutOf } from "../../domain/geometry";
 import type { Point } from "../../domain/venueModels";
 export type PlanSelection = { kind: "table" | "area"; id: string };
-type PositionedTable = ReturnType<typeof layoutOf>["tables"][number];
-function RoundTable({
-  table,
-  snapshot,
-  position,
-  selected,
-  layoutMode,
-  busy,
-  onSelect,
-  onPointerDown,
-  onPointerMove,
-  onPointerUp,
-  onCancel,
-  onNudge,
-}: {
-  table: PositionedTable;
-  snapshot: Snapshot;
-  position: Point;
-  selected: boolean;
-  layoutMode: boolean;
-  busy: boolean;
-  onSelect: () => void;
-  onPointerDown: (e: PointerEvent<HTMLButtonElement>) => void;
-  onPointerMove: (e: PointerEvent<HTMLButtonElement>) => void;
-  onPointerUp: (e: PointerEvent<HTMLButtonElement>) => void;
-  onCancel: () => void;
-  onNudge: (x: number, y: number) => void;
-}) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: table.id,
-    disabled: layoutMode || busy || table.locked,
-  });
-  const used = occupancy(snapshot, table.id);
-  return (
-    <div
-      ref={setNodeRef}
-      className={`plan-table ${selected ? "plan-selected" : ""} ${isOver ? "plan-drop" : ""} ${table.locked ? "plan-locked" : ""}`}
-      style={{
-        left: position.x - TABLE_RADIUS,
-        top: position.y - TABLE_RADIUS,
-      }}
-    >
-      <button
-        aria-label={`平面图 ${table.label} 桌，${used}/${table.capacity}席${table.locked ? "，已锁定" : ""}`}
-        aria-pressed={selected}
-        disabled={busy}
-        onClick={onSelect}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onCancel}
-        onKeyDown={(event) => {
-          if (!layoutMode || table.locked) return;
-          const delta = (
-            {
-              ArrowLeft: [-10, 0],
-              ArrowRight: [10, 0],
-              ArrowUp: [0, -10],
-              ArrowDown: [0, 10],
-            } as Record<string, number[]>
-          )[event.key];
-          if (delta) {
-            event.preventDefault();
-            onNudge(delta[0], delta[1]);
-          }
-        }}
-        style={{
-          touchAction: layoutMode ? "none" : "auto",
-          cursor: layoutMode && !table.locked ? "grab" : "pointer",
-        }}
-      >
-        <strong>{table.label}</strong>
-        <span>
-          {used} / {table.capacity}
-        </span>
-        <small>
-          {table.locked
-            ? "已锁定"
-            : used === table.capacity
-              ? "满桌"
-              : `余 ${table.capacity - used} 席`}
-        </small>
-      </button>
-    </div>
-  );
-}
 export function PlanCanvas({
   snapshot,
   selection,
@@ -99,6 +13,7 @@ export function PlanCanvas({
   layoutMode,
   busy,
   scale,
+  showRoster = false,
   snapStep = 0,
   onPosition,
 }: {
@@ -108,10 +23,26 @@ export function PlanCanvas({
   layoutMode: boolean;
   busy: boolean;
   scale: number;
+  showRoster?: boolean;
   snapStep?: number;
   onPosition: (selection: PlanSelection, point: Point) => Promise<void>;
 }) {
   const { venue, tables } = layoutOf(snapshot);
+  const factor = showRoster ? ROSTER_COORDINATE_SCALE : 1;
+  const viewport = useRef<HTMLDivElement>(null);
+  const previousRoster = useRef(false);
+  useLayoutEffect(() => {
+    if (previousRoster.current === showRoster) return;
+    previousRoster.current = showRoster;
+    const container = viewport.current;
+    const table =
+      container?.querySelector<HTMLElement>(".plan-selected") ??
+      container?.querySelector<HTMLElement>(".plan-table");
+    if (container && table) {
+      container.scrollLeft = Math.max(0, table.offsetLeft * scale - 24);
+      container.scrollTop = Math.max(0, table.offsetTop * scale - 24);
+    }
+  }, [showRoster, scale]);
   const drag = useRef<{
     selection: PlanSelection;
     origin: Point;
@@ -144,10 +75,13 @@ export function PlanCanvas({
   }
   function coordinates(event: PointerEvent<HTMLButtonElement>) {
     const d = drag.current!;
-    const raw = {
-      x: d.origin.x + (event.clientX - d.start.x) / scale,
-      y: d.origin.y + (event.clientY - d.start.y) / scale,
-    };
+    const raw = planDragPoint(
+      d.origin,
+      d.start,
+      { x: event.clientX, y: event.clientY },
+      scale,
+      factor,
+    );
     if (d.selection.kind === "table")
       return snapStep
         ? snapPoint(raw, venue.width, venue.height, snapStep)
@@ -211,16 +145,24 @@ export function PlanCanvas({
       : origin;
   }
   return (
-    <div className="plan-scroll" aria-label="场地画布，可滚动查看" tabIndex={0}>
+    <div
+      ref={viewport}
+      className="plan-scroll"
+      aria-label="场地画布，可滚动查看"
+      tabIndex={0}
+    >
       <div
         className="plan-scaled-frame"
-        style={{ width: venue.width * scale, height: venue.height * scale }}
+        style={{
+          width: venue.width * factor * scale,
+          height: venue.height * factor * scale,
+        }}
       >
         <div
           className="plan-world"
           style={{
-            width: venue.width,
-            height: venue.height,
+            width: venue.width * factor,
+            height: venue.height * factor,
             transform: `scale(${scale})`,
           }}
         >
@@ -238,10 +180,10 @@ export function PlanCanvas({
                 key={area.id}
                 className={`plan-area plan-area-${area.kind} ${selection?.id === area.id ? "plan-area-selected" : ""}`}
                 style={{
-                  left: point.x,
-                  top: point.y,
-                  width: area.width,
-                  height: area.height,
+                  left: point.x * factor,
+                  top: point.y * factor,
+                  width: area.width * factor,
+                  height: area.height * factor,
                   touchAction: layoutMode ? "none" : "auto",
                 }}
                 aria-label={`区域 ${area.label}`}
@@ -264,6 +206,7 @@ export function PlanCanvas({
               <RoundTable
                 key={table.id}
                 table={table}
+                showRoster={showRoster}
                 snapshot={snapshot}
                 position={position(selected, table.position)}
                 selected={selection?.id === table.id}

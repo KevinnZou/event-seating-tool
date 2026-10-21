@@ -503,3 +503,129 @@ test("布局规则：中央过道预览确认/撤销，新增找空位，过道�
   }
   await expect(page.getByTestId("stat-计划出席")).toHaveText("11");
 });
+
+test("场地图名单总览：家庭人数、同名独立、换桌同步与刷新开关", async ({
+  page,
+}, testInfo) => {
+  await demo(page);
+  await expect(
+    page.getByRole("region", { name: "01桌宾客名单", exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("checkbox", { name: "显示宾客名单", exact: true })
+    .check();
+  await expect(page.getByRole("region", { name: /桌宾客名单$/ })).toHaveCount(
+    3,
+  );
+  await expect(
+    page.getByRole("region", { name: "01桌宾客名单", exact: true }),
+  ).toHaveText("暂无宾客");
+  await page.getByRole("button", { name: /^平面图 03 桌/ }).click();
+  await page
+    .getByLabel("平面图选择宾客入桌")
+    .selectOption({ label: "示例小禾一家（4人）" });
+  await expect(
+    page.getByRole("region", { name: "03桌宾客名单", exact: true }),
+  ).toContainText("示例小禾一家×4");
+  await page
+    .getByLabel("平面图移动 示例小禾一家")
+    .selectOption({ label: "66 桌 · 余 10 席" });
+  await expect(
+    page.getByRole("region", { name: "03桌宾客名单", exact: true }),
+  ).toHaveText("暂无宾客");
+  await expect(
+    page.getByRole("region", { name: "66桌宾客名单", exact: true }),
+  ).toContainText("示例小禾一家×4");
+  await page.getByRole("button", { name: "名单与桌位", exact: true }).click();
+  const duplicates = page.getByLabel("安排 示例云朵 的桌位", { exact: true });
+  await duplicates.nth(0).selectOption({ label: "66 桌" });
+  await duplicates.nth(1).selectOption({ label: "66 桌" });
+  await page.getByRole("button", { name: "场地平面图", exact: true }).click();
+  const roster = page.getByRole("region", {
+    name: "66桌宾客名单",
+    exact: true,
+  });
+  await expect(roster.getByRole("listitem")).toHaveCount(3);
+  await expect(
+    roster.getByRole("listitem").filter({ hasText: "示例云朵" }),
+  ).toHaveCount(2);
+  await expect(roster.getByText("待定", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("stat-已安排人数")).toHaveText("6");
+  await page.getByRole("button", { name: /^平面图 66 桌/ }).click();
+  const x = await page.getByLabel("选中项X坐标").inputValue();
+  const y = await page.getByLabel("选中项Y坐标").inputValue();
+  await page.reload();
+  await expect(
+    page.getByRole("checkbox", { name: "显示宾客名单", exact: true }),
+  ).toBeChecked();
+  await expect(roster.getByRole("listitem")).toHaveCount(3);
+  await expect(page.getByTestId("stat-已安排人数")).toHaveText("6");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await roster.scrollIntoViewIfNeeded();
+  if (process.env.CAPTURE_ROSTERS)
+    await page.screenshot({
+      path: `output/playwright/rosters/names-${testInfo.project.name}.png`,
+    });
+  await page
+    .getByRole("checkbox", { name: "显示宾客名单", exact: true })
+    .uncheck();
+  await expect(page.getByRole("region", { name: /桌宾客名单$/ })).toHaveCount(
+    0,
+  );
+  await page.getByRole("button", { name: /^平面图 66 桌/ }).click();
+  await expect(page.getByLabel("选中项X坐标")).toHaveValue(x);
+  await expect(page.getByLabel("选中项Y坐标")).toHaveValue(y);
+  await expect(page.getByTestId("stat-计划出席")).toHaveText("11");
+});
+
+test("名单视图拖动与键盘仍按真实坐标移动，名单滚动不移动桌", async ({
+  page,
+  isMobile,
+}) => {
+  await demo(page);
+  await page
+    .getByRole("checkbox", { name: "显示宾客名单", exact: true })
+    .check();
+  await page.getByRole("button", { name: "调整布局", exact: true }).click();
+  const table = page.getByRole("button", { name: /^平面图 01 桌/ });
+  await table.click();
+  const x = Number(await page.getByLabel("选中项X坐标").inputValue());
+  if (!isMobile) {
+    const box = await table.boundingBox();
+    const scale = await page
+      .locator(".plan-world")
+      .evaluate((element) =>
+        Number(getComputedStyle(element).transform.split("(")[1].split(",")[0]),
+      );
+    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(
+      box!.x + box!.width / 2 + 40 * scale * 2.6,
+      box!.y + box!.height / 2,
+      { steps: 8 },
+    );
+    await page.mouse.up();
+    await expect(page.getByLabel("选中项X坐标")).toHaveValue(String(x + 40));
+  } else {
+    await page.getByLabel("选中项X坐标").fill(String(x + 40));
+    await page.getByRole("button", { name: "保存位置", exact: true }).click();
+  }
+  await expect(page.getByLabel("选中项X坐标")).toHaveValue(String(x + 40));
+  // A filled input already contains the submitted value while the transaction is still busy.
+  // Keyboard presses do not wait for a disabled target, so wait for the save to finish.
+  await expect(table).toBeEnabled();
+  await table.press("ArrowRight");
+  await expect(page.getByLabel("选中项X坐标")).toHaveValue(String(x + 50));
+  await expect(table).toBeEnabled();
+  await page
+    .getByRole("region", { name: "01桌宾客名单", exact: true })
+    .press("ArrowDown");
+  await expect(page.getByLabel("选中项X坐标")).toHaveValue(String(x + 50));
+  await page.reload();
+  await page.getByRole("button", { name: /^平面图 01 桌/ }).click();
+  await expect(page.getByLabel("选中项X坐标")).toHaveValue(String(x + 50));
+});

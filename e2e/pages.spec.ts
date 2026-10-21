@@ -8,7 +8,25 @@ test("生产产物子路径和Hash深链接刷新可用", async ({ page }) => {
   await page.getByRole("button", { name: "试用虚构演示" }).click();
   await expect(page.getByTestId("stat-计划出席")).toHaveText("11");
   expect(page.url()).toContain("/event-seating-tool/#/events/");
+  await page.getByRole("button", { name: "场地平面图", exact: true }).click();
+  await page
+    .getByRole("checkbox", { name: "显示宾客名单", exact: true })
+    .check();
+  await page.getByRole("button", { name: /^平面图 03 桌/ }).click();
+  await page
+    .getByLabel("平面图选择宾客入桌")
+    .selectOption({ label: "示例小禾一家（4人）" });
+  await expect(
+    page.getByRole("region", { name: "03桌宾客名单", exact: true }),
+  ).toContainText("示例小禾一家×4");
   await page.reload();
+  await expect(
+    page.getByRole("checkbox", { name: "显示宾客名单", exact: true }),
+  ).toBeChecked();
+  await expect(
+    page.getByRole("region", { name: "03桌宾客名单", exact: true }),
+  ).toContainText("示例小禾一家×4");
+  await expect(page.getByTestId("stat-已安排人数")).toHaveText("4");
   await expect(
     page.getByRole("heading", { name: "虚构演示婚宴" }),
   ).toBeVisible();
