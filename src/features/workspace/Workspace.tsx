@@ -1,3 +1,5 @@
+import { WorkspaceActions } from "./WorkspaceActions";
+import { NextStep } from "./NextStep";
 import { SuggestionDialog } from "../seating/SuggestionDialog";
 import { VersionDialog } from "../versions/VersionDialog";
 import { FloorPlan } from "../floorplan/FloorPlan";
@@ -100,6 +102,15 @@ export function Workspace() {
       </>
     );
   const stats = calculateEventStats(result);
+  const starting =
+    !result.guests.length && !result.tables.length && view === "list";
+  const showTools =
+    !starting ||
+    historyService.canUndo(eventId) ||
+    historyService.canRedo(eventId);
+  const validSelected = selected.filter((id) =>
+    result.guests.some((g) => g.id === id),
+  );
 
   return (
     <>
@@ -119,9 +130,12 @@ export function Workspace() {
           <Link className="button" to={`/events/${eventId}/export`}>
             导出交付
           </Link>
-          <button onClick={() => setSuggesting(true)}>规则排桌建议</button>
-          <button onClick={() => setVersioning(true)}>命名方案与差异</button>
-          <button onClick={() => setEdit(true)}>编辑活动</button>
+          <WorkspaceActions
+            onSuggest={() => setSuggesting(true)}
+            onVersions={() => setVersioning(true)}
+            onEdit={() => setEdit(true)}
+            onAddTable={starting ? () => setTable("new") : undefined}
+          />
         </div>
       </div>
       {peerWarning && (
@@ -134,7 +148,19 @@ export function Workspace() {
           {location.state.restoreReport}
         </p>
       )}
-      <div className="stats workspace-stats">
+      <NextStep
+        snapshot={result}
+        view={view}
+        busy={busy}
+        onImport={() => setImporting(true)}
+        onAddGuest={() => setGuest("new")}
+        onAddTable={() => setTable("new")}
+        onArrange={() => setView("board")}
+        onSuggest={() => setSuggesting(true)}
+      />
+      <div
+        className={`stats workspace-stats ${result.guests.length ? "" : "is-empty"}`}
+      >
         {[
           ["计划出席", stats.plannedCount],
           ["桌位数量", stats.tableCount],
@@ -147,11 +173,13 @@ export function Workspace() {
           </div>
         ))}
       </div>
-      <p className="muted">
-        录入 {stats.totalRecordedCount} 人 · 确认 {stats.confirmedCount} · 待定{" "}
-        {stats.tentativeCount} · 不参加 {stats.declinedCount} · 总容量{" "}
-        {stats.capacity} 席 · 余席 {stats.freeSeats}
-      </p>
+      {result.guests.length > 0 && (
+        <p className="muted">
+          录入 {stats.totalRecordedCount} 人 · 确认 {stats.confirmedCount} ·
+          待定 {stats.tentativeCount} · 不参加 {stats.declinedCount} · 总容量{" "}
+          {stats.capacity} 席 · 余席 {stats.freeSeats}
+        </p>
+      )}
       <p className="saved">
         {busy
           ? "正在保存…"
@@ -172,41 +200,58 @@ export function Workspace() {
           </button>
         </div>
       )}
-      <div className="workspace-tools">
-        <div className="actions" role="group" aria-label="工作区视图与历史操作">
-          <button
-            aria-pressed={view === "list"}
-            onClick={() => setView("list")}
+      {showTools && (
+        <div className="workspace-tools">
+          <div
+            className="actions"
+            role="group"
+            aria-label="工作区视图与历史操作"
           >
-            名单与桌位
-          </button>
-          <button
-            aria-pressed={view === "floor"}
-            onClick={() => setView("floor")}
-          >
-            场地平面图
-          </button>
-          <button
-            aria-pressed={view === "board"}
-            onClick={() => setView("board")}
-          >
-            排桌工作台
-          </button>
-          <button
-            disabled={busy || !historyService.canUndo(eventId)}
-            onClick={() => void run(() => historyService.undo(eventId), false)}
-          >
-            撤销
-          </button>
-          <button
-            disabled={busy || !historyService.canRedo(eventId)}
-            onClick={() => void run(() => historyService.redo(eventId), false)}
-          >
-            重做
-          </button>
+            <button
+              aria-pressed={view === "list"}
+              onClick={() => setView("list")}
+            >
+              名单与桌位
+            </button>
+            <button
+              aria-pressed={view === "floor"}
+              onClick={() => setView("floor")}
+            >
+              场地平面图
+            </button>
+            <button
+              aria-pressed={view === "board"}
+              onClick={() => setView("board")}
+            >
+              排桌工作台
+            </button>
+            <button
+              disabled={busy || !historyService.canUndo(eventId)}
+              onClick={() =>
+                void run(() => historyService.undo(eventId), false)
+              }
+            >
+              撤销
+            </button>
+            <button
+              disabled={busy || !historyService.canRedo(eventId)}
+              onClick={() =>
+                void run(() => historyService.redo(eventId), false)
+              }
+            >
+              重做
+            </button>
+          </div>
+          <p className="muted view-purpose">
+            {view === "list"
+              ? "名单与桌位：录入、修改人数和桌号。"
+              : view === "board"
+                ? "排桌工作台：把宾客整组移到桌上，也可使用每组下方的菜单。"
+                : "场地平面图：查看现场位置，安排宾客；切换“调整布局”再移动圆桌。"}
+            <span>撤销最多30步，仅本次会话有效。</span>
+          </p>
         </div>
-        <p className="muted">撤销记录最多30步，仅本次页面会话有效。</p>
-      </div>
+      )}
       {view !== "floor" && result.guests.length > 0 && (
         <>
           <GuestFilters
@@ -214,15 +259,15 @@ export function Workspace() {
             value={filters}
             onChange={setFilters}
           />
-          <BatchActions
-            snapshot={result}
-            selected={selected.filter((id) =>
-              result.guests.some((g) => g.id === id),
-            )}
-            clear={() => setSelected([])}
-            run={run}
-            busy={busy}
-          />
+          {validSelected.length > 0 && (
+            <BatchActions
+              snapshot={result}
+              selected={validSelected}
+              clear={() => setSelected([])}
+              run={run}
+              busy={busy}
+            />
+          )}
         </>
       )}
       {view === "floor" ? (
@@ -245,7 +290,7 @@ export function Workspace() {
           onAddTable={() => setTable("new")}
           onAddGuest={() => setGuest("new")}
         />
-      ) : (
+      ) : !starting ? (
         <div className="workspace-grid">
           <TablesPanel
             snapshot={result}
@@ -268,75 +313,84 @@ export function Workspace() {
             busy={busy}
           />
         </div>
-      )}
+      ) : null}
       {view !== "floor" && result.guests.length > 0 && (
-        <div className="swapbar">
-          <label>
-            对调桌位
-            <select id="swap-a">
-              <option value="">选择第一桌</option>
-              {result.tables.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label} 桌
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            目标桌位
-            <select id="swap-b">
-              <option value="">选择第二桌</option>
-              {result.tables.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label} 桌
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            disabled={busy}
-            onClick={() => {
-              const a = (document.getElementById("swap-a") as HTMLSelectElement)
-                  .value,
-                b = (document.getElementById("swap-b") as HTMLSelectElement)
-                  .value;
-              if (
-                a &&
-                b &&
-                window.confirm("对调两桌全部宾客？桌号与容量不变。")
-              )
-                void run(() => workspaceService.swap(eventId, a, b));
-            }}
-          >
-            对调两桌宾客
-          </button>
-        </div>
+        <details className="workspace-secondary">
+          <summary>整桌对调</summary>
+          <div className="swapbar">
+            <label>
+              对调桌位
+              <select id="swap-a">
+                <option value="">选择第一桌</option>
+                {result.tables.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label} 桌
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              目标桌位
+              <select id="swap-b">
+                <option value="">选择第二桌</option>
+                {result.tables.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label} 桌
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              disabled={busy}
+              onClick={() => {
+                const a = (
+                    document.getElementById("swap-a") as HTMLSelectElement
+                  ).value,
+                  b = (document.getElementById("swap-b") as HTMLSelectElement)
+                    .value;
+                if (
+                  a &&
+                  b &&
+                  window.confirm("对调两桌全部宾客？桌号与容量不变。")
+                )
+                  void run(() => workspaceService.swap(eventId, a, b));
+              }}
+            >
+              对调两桌宾客
+            </button>
+          </div>
+        </details>
       )}
-      <ValidationCenter
-        snapshot={result}
-        onLocate={(id) => {
-          setView("list");
-          const target = result.guests.find((g) => g.id === id);
-          setFilters(
-            target
-              ? {
-                  ...initialFilters,
-                  query: target.displayName,
-                  guestId: target.id,
-                }
-              : initialFilters,
-          );
-          requestAnimationFrame(() =>
-            requestAnimationFrame(() => {
-              const element =
-                document.getElementById(`guest-${id}`) ??
-                document.getElementById(`table-${id}`);
-              element?.scrollIntoView({ behavior: "smooth", block: "center" });
-              element?.focus();
-            }),
-          );
-        }}
-      />
+      {!starting && (
+        <ValidationCenter
+          snapshot={result}
+          onLocate={(id) => {
+            setView("list");
+            const target = result.guests.find((g) => g.id === id);
+            setFilters(
+              target
+                ? {
+                    ...initialFilters,
+                    query: target.displayName,
+                    guestId: target.id,
+                  }
+                : initialFilters,
+            );
+            requestAnimationFrame(() =>
+              requestAnimationFrame(() => {
+                const element =
+                  document.getElementById(`guest-${id}`) ??
+                  document.getElementById(`table-${id}`);
+                element?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+                element?.focus();
+              }),
+            );
+          }}
+        />
+      )}
       {suggesting && (
         <SuggestionDialog
           snapshot={result}
@@ -350,7 +404,12 @@ export function Workspace() {
       {importing && (
         <ImportWizard snapshot={result} onClose={() => setImporting(false)} />
       )}
-      <DataSafetyPanel snapshot={result} onBackup={() => setBackingUp(true)} />
+      {!starting && (
+        <DataSafetyPanel
+          snapshot={result}
+          onBackup={() => setBackingUp(true)}
+        />
+      )}
       {backingUp && (
         <BackupManager eventId={eventId} onClose={() => setBackingUp(false)} />
       )}

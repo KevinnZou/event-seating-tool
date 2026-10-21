@@ -39,6 +39,11 @@ export function EventForm({
   return (
     <Modal title={initial ? "编辑活动" : "新建活动"} onClose={onClose}>
       <form onSubmit={submit}>
+        {!initial && (
+          <p className="muted">
+            先填写活动名称即可开始。桌数、日期和容量之后都能调整。
+          </p>
+        )}
         <label>
           活动名称
           <input

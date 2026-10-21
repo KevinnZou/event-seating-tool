@@ -159,20 +159,25 @@ export function FloorPlan({
           >
             一键整理
           </button>
-          <button disabled={busy} onClick={() => setArea("aisle")}>
-            添加过道
-          </button>
-          <label className="check plan-snap">
-            <input
-              type="checkbox"
-              checked={snap}
-              onChange={(e) => setSnap(e.target.checked)}
-            />
-            吸附网格（20）
-          </label>
-          <button onClick={() => setArea("new")} disabled={busy}>
-            添加舞台 / 入口
-          </button>
+          <details className="plan-edit-tools" open={layoutMode}>
+            <summary>舞台、过道与吸附</summary>
+            <div className="actions">
+              <button disabled={busy} onClick={() => setArea("aisle")}>
+                添加过道
+              </button>
+              <label className="check plan-snap">
+                <input
+                  type="checkbox"
+                  checked={snap}
+                  onChange={(e) => setSnap(e.target.checked)}
+                />
+                吸附网格（20）
+              </label>
+              <button onClick={() => setArea("new")} disabled={busy}>
+                添加舞台 / 入口
+              </button>
+            </div>
+          </details>
         </div>
         <div className="actions">
           <button

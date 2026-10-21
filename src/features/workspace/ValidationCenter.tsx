@@ -13,9 +13,18 @@ export function ValidationCenter({
   const issues = validateEvent(snapshot),
     items = issues.filter((i) => !onlyErrors || i.severity === "error");
   return (
-    <section className="panel issues">
-      <div className="section-heading">
+    <details
+      className="panel issues"
+      open={issues.some((i) => i.severity === "error")}
+    >
+      <summary className="review-summary">
         <h2>校验中心</h2>
+        <span>
+          错误 {issues.filter((i) => i.severity === "error").length} 项 · 提醒{" "}
+          {issues.filter((i) => i.severity === "warning").length} 项
+        </span>
+      </summary>
+      <div className="section-heading">
         <label className="check">
           <input
             type="checkbox"
@@ -54,6 +63,6 @@ export function ValidationCenter({
       ) : (
         <p>暂无{onlyErrors ? "错误" : "数据问题"}</p>
       )}
-    </section>
+    </details>
   );
 }

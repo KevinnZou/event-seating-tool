@@ -1,3 +1,4 @@
+import { openExtra } from "./interactions.js";
 import { test, expect } from "@playwright/test";
 async function demo(page: import("@playwright/test").Page) {
   page.on("dialog", (dialog) => dialog.accept());
@@ -20,6 +21,7 @@ test("V02 平面图菜单安排、坐标、区域、刷新和锁定保护", asyn
   await expect(
     page.getByRole("button", { name: /^平面图 03 桌/ }),
   ).toBeVisible();
+  await page.locator(".plan-edit-tools > summary").click();
   await page.getByRole("button", { name: "添加舞台 / 入口" }).click();
   await page.getByLabel("区域名称").fill("虚构舞台");
   await page.getByLabel("区域X坐标").fill("600");
@@ -95,9 +97,7 @@ test("V02 命名方案比较调桌与布局，恢复保护当前状态，规则�
   page,
 }, testInfo) => {
   await demo(page);
-  await page
-    .getByRole("button", { name: "命名方案与差异", exact: true })
-    .click();
+  await openExtra(page, "命名方案与差异");
   const dialog = page.getByRole("dialog");
   await page.getByLabel("新方案名称").fill("虚构初稿");
   await page.getByRole("button", { name: "保存当前为命名方案" }).click();
@@ -110,9 +110,7 @@ test("V02 命名方案比较调桌与布局，恢复保护当前状态，规则�
   await page.getByLabel("选中项X坐标").fill("500");
   await page.getByLabel("选中项Y坐标").fill("400");
   await page.getByRole("button", { name: "保存位置", exact: true }).click();
-  await page
-    .getByRole("button", { name: "命名方案与差异", exact: true })
-    .click();
+  await openExtra(page, "命名方案与差异");
   await page.getByLabel("比较起点").selectOption({ index: 2 });
   await expect(
     dialog.getByRole("cell", { name: "调桌", exact: true }),
@@ -130,7 +128,7 @@ test("V02 命名方案比较调桌与布局，恢复保护当前状态，规则�
   );
   await dialog.getByRole("button", { name: "完成", exact: true }).click();
   await expect(page.getByTestId("stat-已安排人数")).toHaveText("0");
-  await page.getByRole("button", { name: "规则排桌建议", exact: true }).click();
+  await openExtra(page, "规则排桌建议");
   await page.getByRole("button", { name: "生成建议预览" }).click();
   await expect(dialog.getByRole("status")).toContainText("5 组 / 11 人");
   await expect(page.getByTestId("stat-已安排人数")).toHaveText("0");
@@ -143,6 +141,8 @@ test("V02 命名方案比较调桌与布局，恢复保护当前状态，规则�
   await page.getByRole("button", { name: "撤销", exact: true }).click();
   await expect(page.getByTestId("stat-已安排人数")).toHaveText("0");
   await page.getByRole("button", { name: "重做", exact: true }).click();
+  // The click starts a transaction; verify its committed result before testing persistence.
+  await expect(page.getByTestId("stat-已安排人数")).toHaveText("11");
   await page.reload();
   await expect(page.getByTestId("stat-已安排人数")).toHaveText("11");
 });
@@ -206,9 +206,7 @@ test("V02 完整备份恢复新活动保留场地、坐标与命名方案", asyn
   await page.getByLabel("选中项X坐标").fill("650");
   await page.getByLabel("选中项Y坐标").fill("500");
   await page.getByRole("button", { name: "保存位置", exact: true }).click();
-  await page
-    .getByRole("button", { name: "命名方案与差异", exact: true })
-    .click();
+  await openExtra(page, "命名方案与差异");
   await page.getByLabel("新方案名称").fill("虚构场地确认稿");
   await page.getByRole("button", { name: "保存当前为命名方案" }).click();
   await expect(page.getByRole("dialog").getByRole("status")).toHaveText(
@@ -238,16 +236,14 @@ test("V02 完整备份恢复新活动保留场地、坐标与命名方案", asyn
   await page.getByRole("button", { name: "场地平面图", exact: true }).click();
   await page.getByRole("button", { name: /^平面图 03 桌/ }).click();
   await expect(page.getByLabel("选中项X坐标")).toHaveValue("650");
-  await page
-    .getByRole("button", { name: "命名方案与差异", exact: true })
-    .click();
+  await openExtra(page, "命名方案与差异");
   await expect(page.getByLabel("重命名方案 虚构场地确认稿")).toBeVisible();
 });
 
 test("V02 建议预览期间外部变更使旧预览失效", async ({ page, context }) => {
   await demo(page);
   const url = page.url();
-  await page.getByRole("button", { name: "规则排桌建议", exact: true }).click();
+  await openExtra(page, "规则排桌建议");
   await page.getByRole("button", { name: "生成建议预览" }).click();
   const other = await context.newPage();
   other.on("dialog", (d) => d.accept());

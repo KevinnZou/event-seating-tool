@@ -1,3 +1,4 @@
+import { openExtra } from "./interactions.js";
 import { test, expect } from "@playwright/test";
 test("生产产物子路径和Hash深链接刷新可用", async ({ page }) => {
   await page.goto("./");
@@ -45,9 +46,7 @@ test("生产版离线重开保留安排，尚未访问的导出和Excel也可离
     await page.getByLabel("选中项X坐标").fill("500");
     await page.getByLabel("选中项Y坐标").fill("400");
     await page.getByRole("button", { name: "保存位置", exact: true }).click();
-    await page
-      .getByRole("button", { name: "命名方案与差异", exact: true })
-      .click();
+    await openExtra(page, "命名方案与差异");
     await page.getByLabel("新方案名称").fill("虚构离线方案");
     await page.getByRole("button", { name: "保存当前为命名方案" }).click();
     await expect(page.getByRole("dialog").getByRole("status")).toHaveText(
@@ -131,9 +130,7 @@ test("生产版离线重开保留安排，尚未访问的导出和Excel也可离
     await page.getByRole("button", { name: "场地平面图", exact: true }).click();
     await page.getByRole("button", { name: /^平面图 03 桌/ }).click();
     await expect(page.getByLabel("选中项X坐标")).toHaveValue("500");
-    await page
-      .getByRole("button", { name: "命名方案与差异", exact: true })
-      .click();
+    await openExtra(page, "命名方案与差异");
     await expect(page.getByLabel("重命名方案 虚构离线方案")).toBeVisible();
     await page
       .getByRole("dialog")

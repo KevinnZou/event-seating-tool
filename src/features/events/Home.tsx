@@ -51,7 +51,7 @@ export function Home() {
         </div>
       </div>
       <p className="notice">
-        活动数据仅保存在当前浏览器。清理站点数据、换设备或使用无痕模式可能丢失数据。请定期下载完整JSON备份。
+        活动仅保存在当前浏览器。换设备或清理浏览器前，请先下载完整备份。
       </p>
       {error && (
         <p role="alert" className="error">
@@ -63,7 +63,7 @@ export function Home() {
       ) : events.length === 0 ? (
         <section className="empty">
           <h2>从一场活动开始</h2>
-          <p>创建活动，逐组核对人数，为每位宾客安排一张圆桌。</p>
+          <p>录入名单 → 安排桌位 → 导出结果，场地图可以稍后再调整。</p>
           <button onClick={() => setEdit("new")}>创建第一个活动</button>
         </section>
       ) : (
